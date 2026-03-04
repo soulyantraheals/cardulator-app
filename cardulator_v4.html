@@ -1,0 +1,3585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cardulator — Your Business. One Link. Every Phone.</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<script>
+// --- AUTHENTICATION STATE GEMINI AUTHENTIATION SCRIPT ---
+let currentUser = null;
+
+async function handleLogin(email, password) {
+    // Integration with Supabase Auth
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+    });
+    if (error) {
+        showToast("Login Failed: " + error.message, "❌ ERROR");
+    } else {
+        currentUser = data.user;
+        showToast("Welcome back!", "✅ LOGGED IN");
+        toggleModal('auth-modal');
+        updateUIForUser();
+    }
+}
+</script>
+
+<style>
+  :root {
+    --black: #080810;
+    --surface: #0e0e1a;
+    --card: #13131f;
+    --border: rgba(255,255,255,0.07);
+    --red: #e8232a;
+    --red-dark: #a01318;
+    --red-glow: rgba(232,35,42,0.15);
+    --cyan: #00e5ff;
+    --cyan-glow: rgba(0,229,255,0.12);
+    --white: #f0f0f8;
+    --muted: rgba(240,240,248,0.45);
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* ─── NAVIGATION ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 40px;
+    background: rgba(8,8,16,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: var(--font-display);
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--white);
+    cursor: pointer;
+  }
+  .nav-logo span { color: var(--red); }
+  .nav-links { display: flex; gap: 32px; align-items: center; }
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.2s;
+    cursor: pointer;
+  }
+  .nav-links a:hover { color: var(--white); }
+  .nav-cta {
+    background: var(--red);
+    color: var(--white) !important;
+    padding: 10px 24px;
+    border-radius: 4px;
+    font-weight: 600 !important;
+  }
+  .nav-cta:hover { background: #ff3333 !important; color: var(--white) !important; }
+
+  /* ─── PAGE SYSTEM ─── */
+  .page { display: none; min-height: 100vh; padding-top: 80px; }
+  .page.active { display: block; }
+
+  /* ─── PAGE 1: LANDING ─── */
+  #page1 { background: var(--black); }
+
+  .hero {
+    min-height: calc(100vh - 80px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 80px;
+    padding: 80px 40px 80px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, var(--red-glow) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; bottom: -200px; left: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, var(--cyan-glow) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    padding: 8px 16px;
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero-badge .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(64px, 8vw, 110px);
+    line-height: 0.92;
+    letter-spacing: 2px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+  .hero-title .line-red { color: var(--red); display: block; }
+  .hero-title .line-outline {
+    -webkit-text-stroke: 1px rgba(240,240,248,0.3);
+    color: transparent;
+    display: block;
+  }
+
+  .hero-sub {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--muted);
+    max-width: 480px;
+    margin: 24px 0 40px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .hero-actions {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .btn-primary {
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    padding: 16px 36px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+  }
+  .btn-primary:hover { background: #ff2222; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(232,35,42,0.4); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--white);
+    border: 1px solid var(--border);
+    padding: 16px 36px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); }
+
+  .hero-stats {
+    display: flex; gap: 40px; margin-top: 56px;
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+  .stat { border-left: 2px solid var(--red); padding-left: 16px; }
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 36px;
+    color: var(--white);
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* Phone mockup */
+  .hero-visual {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    animation: fadeIn 1s 0.3s ease both;
+  }
+  .phone-frame {
+    width: 260px;
+    background: #0a0a14;
+    border: 2px solid rgba(0,229,255,0.3);
+    border-radius: 36px;
+    padding: 20px 12px;
+    box-shadow: 0 0 60px rgba(0,229,255,0.15), 0 0 120px rgba(232,35,42,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  .phone-frame::before {
+    content: '';
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 24px;
+    background: #0a0a14;
+    border-radius: 0 0 16px 16px;
+    z-index: 10;
+    border: 2px solid rgba(0,229,255,0.2);
+    border-top: none;
+  }
+  .phone-screen {
+    background: #080810;
+    border-radius: 24px;
+    overflow: hidden;
+    padding: 16px 10px;
+  }
+  .phone-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 4px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 10px;
+  }
+  .phone-brand {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    color: var(--red);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .phone-btns { display: flex; gap: 4px; }
+  .phone-btn {
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 6px;
+    font-family: var(--font-mono);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .phone-btn-settings { background: rgba(255,255,255,0.08); color: var(--muted); }
+  .phone-btn-contact { background: var(--red-dark); color: var(--white); }
+  .phone-display {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 8px;
+    height: 36px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 10px;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+  }
+  .phone-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .phone-key {
+    background: #1a1a2e;
+    border-radius: 6px;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 4px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--red);
+    position: relative;
+    overflow: hidden;
+  }
+  .phone-key .car-img {
+    width: 18px; height: 12px;
+    object-fit: contain;
+    margin-bottom: 1px;
+    opacity: 0.7;
+  }
+  .phone-key.op { color: rgba(255,255,255,0.5); font-size: 12px; padding-bottom: 6px; }
+  .phone-key.wide { grid-column: span 2; aspect-ratio: auto; padding: 8px; }
+  .glow-ring {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,229,255,0.1);
+    animation: rotate 8s linear infinite;
+  }
+  .glow-ring-2 {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    border: 1px solid rgba(232,35,42,0.08);
+    animation: rotate 12s linear infinite reverse;
+  }
+  @keyframes rotate { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+  /* Features section */
+  .features {
+    padding: 100px 80px;
+    border-top: 1px solid var(--border);
+    position: relative;
+  }
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--red);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 6vw, 80px);
+    line-height: 0.95;
+    margin-bottom: 64px;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: var(--border);
+  }
+  .feature-card {
+    background: var(--card);
+    padding: 40px 32px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+  .feature-card:hover { background: #1a1a2e; }
+  .feature-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 0; height: 3px;
+    background: var(--red);
+    transition: width 0.4s;
+  }
+  .feature-card:hover::before { width: 100%; }
+  .feature-icon {
+    font-size: 32px;
+    margin-bottom: 20px;
+    display: block;
+  }
+  .feature-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    color: var(--white);
+  }
+  .feature-desc { font-size: 14px; line-height: 1.7; color: var(--muted); }
+
+  /* Pricing teaser */
+  .pricing-teaser {
+    padding: 80px;
+    text-align: center;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ─── PAGE 2: PRICING ─── */
+  #page2 { background: var(--black); }
+
+  .page-header {
+    padding: 80px 80px 0;
+    text-align: center;
+  }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 7vw, 96px);
+    line-height: 0.9;
+    margin-bottom: 20px;
+  }
+  .page-sub { font-size: 16px; color: var(--muted); max-width: 500px; margin: 0 auto 64px; line-height: 1.7; }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--border);
+    margin: 0 40px;
+  }
+  .pricing-card {
+    background: var(--card);
+    padding: 40px 28px 36px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s;
+    display: flex; flex-direction: column;
+  }
+  .pricing-card.featured {
+    background: #13131f;
+    border-top: 3px solid var(--cyan);
+  }
+  .pricing-card:not(.featured) { border-top: 3px solid transparent; }
+  .pricing-tier {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .pricing-name {
+    font-family: var(--font-display);
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+  .pricing-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--cyan);
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+  }
+  .pricing-amount {
+    margin-bottom: 8px;
+    display: flex; align-items: baseline; gap: 4px;
+  }
+  .pricing-currency {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+  }
+  .pricing-num {
+    font-family: var(--font-display);
+    font-size: 52px;
+    line-height: 1;
+    color: var(--white);
+  }
+  .pricing-period {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .pricing-setup {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--red);
+    margin-bottom: 32px;
+    letter-spacing: 1px;
+  }
+  .pricing-divider {
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 24px;
+  }
+  .pricing-features { list-style: none; flex: 1; margin-bottom: 32px; }
+  .pricing-features li {
+    font-size: 13px;
+    color: var(--muted);
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    display: flex; align-items: flex-start; gap: 10px;
+    line-height: 1.5;
+  }
+  .pricing-features li::before {
+    content: '→';
+    color: var(--red);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .pricing-features li.highlight { color: var(--white); }
+  .pricing-cta {
+    width: 100%;
+    padding: 14px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  .pricing-cta-primary { background: var(--red); color: var(--white); }
+  .pricing-cta-primary:hover { background: #ff2222; transform: translateY(-1px); }
+  .pricing-cta-outline { background: transparent; color: var(--white); border: 1px solid var(--border) !important; border: none; }
+  .pricing-cta-outline:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2) !important; }
+  .pricing-cta-cyan { background: var(--cyan); color: var(--black); }
+  .pricing-cta-cyan:hover { background: #33eeff; }
+
+  .pricing-note {
+    text-align: center;
+    padding: 40px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ─── PAGE 3: ONBOARDING WIZARD ─── */
+  #page3 { background: var(--black); }
+
+  .wizard-container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 60px 40px 100px;
+  }
+  .wizard-progress {
+    display: flex; align-items: center; gap: 0;
+    margin-bottom: 64px;
+  }
+  .wizard-step {
+    display: flex; align-items: center; gap: 0; flex: 1;
+  }
+  .step-circle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0;
+    transition: all 0.3s;
+    border: 2px solid var(--border);
+    color: var(--muted);
+    background: var(--card);
+    cursor: pointer;
+  }
+  .step-circle.active { border-color: var(--red); color: var(--white); background: var(--red); }
+  .step-circle.done { border-color: var(--cyan); color: var(--black); background: var(--cyan); }
+  .step-line {
+    flex: 1; height: 2px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .step-line.done { background: var(--cyan); }
+  .step-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 8px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .step-wrapper { display: flex; flex-direction: column; align-items: center; }
+
+  .wizard-panel { display: none; }
+  .wizard-panel.active { display: block; animation: fadeUp 0.4s ease; }
+
+  .wizard-title {
+    font-family: var(--font-display);
+    font-size: 52px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .wizard-subtitle {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+
+  /* Form elements */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .form-group { margin-bottom: 20px; }
+  .form-group.full { grid-column: span 2; }
+  .form-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .form-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--red); }
+  .form-input::placeholder { color: rgba(240,240,248,0.2); }
+
+  .subdomain-group { position: relative; }
+  .subdomain-input {
+    padding-right: 160px;
+  }
+  .subdomain-suffix {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--cyan);
+    pointer-events: none;
+  }
+  .subdomain-check {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+  .subdomain-check.avail { color: #22ff88; }
+  .subdomain-check.taken { color: var(--red); }
+
+  /* Template selector */
+  .template-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 32px; }
+  .template-option {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .template-option:hover { border-color: rgba(255,255,255,0.2); }
+  .template-option.selected { border-color: var(--red); background: var(--red-glow); }
+  .template-icon { font-size: 28px; margin-bottom: 8px; }
+  .template-name {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .template-option.selected .template-name { color: var(--white); }
+
+  /* Color picker */
+  .color-row { display: flex; gap: 16px; margin-bottom: 32px; }
+  .color-swatch-group { flex: 1; }
+  .color-swatch-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
+  .color-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .color-dot:hover, .color-dot.selected { border-color: var(--white); transform: scale(1.15); }
+
+  /* Logo upload */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 32px;
+  }
+  .upload-zone:hover { border-color: var(--red); background: var(--red-glow); }
+  .upload-icon { font-size: 36px; margin-bottom: 12px; }
+  .upload-text { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+
+  /* Feature toggles */
+  .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px; }
+  .toggle-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .toggle-item:hover { border-color: rgba(255,255,255,0.15); }
+  .toggle-item.locked { opacity: 0.4; cursor: not-allowed; }
+  .toggle-info {}
+  .toggle-name {
+    font-size: 14px; font-weight: 600; margin-bottom: 2px;
+  }
+  .toggle-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+  .toggle-meta.price { color: var(--red); }
+  .toggle-switch {
+    width: 40px; height: 22px;
+    background: var(--border);
+    border-radius: 11px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-switch.on { background: var(--red); }
+  .toggle-switch::after {
+    content: '';
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--white);
+    transition: left 0.2s;
+  }
+  .toggle-switch.on::after { left: 21px; }
+
+  /* Wizard nav */
+
+/*GEMINI CODE*/
+  <div class="form-group">
+    <label class="form-label">Main Button Text (e.g., Book a Plot)</label>
+    <input type="text" id="cta-label-main" class="form-input" placeholder="Book a Test Drive">
+</div>
+<div class="form-group">
+    <label class="form-label">Phone Label (e.g., Sales Hotline)</label>
+    <input type="text" id="phone-label-1" class="form-input" placeholder="Dealer Phone">
+</div>
+/*GEMINI CODE END*/
+
+  .wizard-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
+  .wizard-back {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 12px 28px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .wizard-back:hover { color: var(--white); border-color: rgba(255,255,255,0.3); }
+  .wizard-next {
+    background: var(--red); color: var(--white);
+    border: none;
+    padding: 14px 40px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .wizard-next:hover { background: #ff2222; transform: translateY(-2px); }
+
+  /* ─── PAGE 4: CHECKOUT ─── */
+  #page4 { background: var(--black); }
+
+  .checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 40px 100px;
+    align-items: start;
+  }
+
+  .preview-frame {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .preview-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .preview-label .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #22ff88;
+    animation: pulse 2s infinite;
+  }
+  .preview-phone-wrap {
+    padding: 40px;
+    display: flex; justify-content: center;
+    background: linear-gradient(135deg, #0a0a14 0%, #13131f 100%);
+  }
+  .preview-phone {
+    width: 240px;
+    background: #080810;
+    border: 2px solid rgba(0,229,255,0.25);
+    border-radius: 32px;
+    padding: 16px 10px;
+    box-shadow: 0 0 40px rgba(0,229,255,0.1);
+  }
+  .preview-screen {
+    background: #050508;
+    border-radius: 22px;
+    padding: 14px 8px;
+    min-height: 380px;
+  }
+
+  /* Order summary */
+  .order-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: sticky;
+    top: 100px;
+  }
+  .order-header {
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-display);
+    font-size: 28px;
+    letter-spacing: 1px;
+  }
+  .order-line {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .order-item-name { font-size: 14px; }
+  .order-item-desc { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .order-item-price {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--white);
+    white-space: nowrap;
+  }
+  .order-total {
+    padding: 20px 24px;
+    border-top: 2px solid var(--red);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .order-total-label { font-family: var(--font-display); font-size: 20px; letter-spacing: 1px; }
+  .order-total-amount { font-family: var(--font-display); font-size: 32px; color: var(--red); }
+  .order-monthly {
+    padding: 0 24px 20px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .coupon-row { padding: 20px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+  .coupon-input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 10px 14px; color: var(--white); font-family: var(--font-mono); font-size: 12px; outline: none; }
+  .coupon-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 10px 16px; border-radius: 4px; cursor: pointer; font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px; transition: all 0.2s; }
+  .coupon-btn:hover { border-color: var(--white); color: var(--white); }
+
+  .pay-btn {
+    margin: 20px 24px;
+    width: calc(100% - 48px);
+    padding: 18px;
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .pay-btn:hover { background: #ff2222; box-shadow: 0 8px 30px rgba(232,35,42,0.35); }
+  .pay-secure {
+    text-align: center;
+    padding: 0 24px 24px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ─── PAGE 5: DASHBOARD ─── */
+  #page5 { background: var(--black); }
+
+  .dashboard-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 80px);
+  }
+
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 32px 0;
+    position: sticky;
+    top: 80px;
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+  .sidebar-user {
+    padding: 0 24px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  .sidebar-name { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
+  .sidebar-plan {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    background: var(--cyan-glow);
+    padding: 3px 8px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  .sidebar-menu { padding: 0 12px; }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .sidebar-item:hover { background: var(--card); color: var(--white); }
+  .sidebar-item.active { background: var(--red-glow); color: var(--white); border-left: 2px solid var(--red); border-radius: 0 6px 6px 0; }
+  .sidebar-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-section-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(240,240,248,0.2);
+    padding: 16px 26px 8px;
+  }
+
+  .main-content { padding: 40px; overflow-y: auto; }
+
+  .dash-greeting {
+    margin-bottom: 40px;
+  }
+  .dash-greeting-top {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .dash-greeting-name {
+    font-family: var(--font-display);
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .live-url-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--cyan);
+    border-radius: 8px;
+    padding: 20px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .live-url-left { display: flex; align-items: center; gap: 12px; }
+  .live-badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 2px;
+    background: rgba(34,255,136,0.12);
+    color: #22ff88;
+    border: 1px solid rgba(34,255,136,0.2);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .live-badge::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #22ff88;
+    animation: pulse 2s infinite;
+  }
+  .live-url {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--cyan);
+  }
+  .live-actions { display: flex; gap: 8px; }
+  .action-btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+  }
+  .action-btn:hover { color: var(--white); border-color: rgba(255,255,255,0.3); }
+  .action-btn.primary { background: var(--red); color: var(--white); border-color: var(--red); }
+  .action-btn.primary:hover { background: #ff2222; }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 20px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--red);
+    transform: scaleX(0);
+    transition: transform 0.3s;
+    transform-origin: left;
+  }
+  .stat-card:hover::after { transform: scaleX(1); }
+  .stat-card-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .stat-card-num { font-family: var(--font-display); font-size: 44px; line-height: 1; margin-bottom: 4px; }
+  .stat-card-trend { font-family: var(--font-mono); font-size: 10px; }
+  .stat-card-trend.up { color: #22ff88; }
+  .stat-card-trend.down { color: var(--red); }
+
+  /* Dashboard content panels */
+  .dash-grid { display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
+  .dash-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .dash-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .dash-card-title { font-family: var(--font-display); font-size: 22px; letter-spacing: 1px; }
+  .dash-card-body { padding: 24px; }
+
+  .quick-edit-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .quick-edit-row:last-child { border-bottom: none; }
+  .quick-edit-label { font-size: 13px; color: var(--muted); }
+  .quick-edit-value { font-family: var(--font-mono); font-size: 12px; color: var(--white); }
+  .quick-edit-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 4px 12px; border-radius: 3px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; }
+  .quick-edit-btn:hover { color: var(--white); border-color: rgba(255,255,255,0.3); }
+
+  /* Activity feed */
+  .activity-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .activity-icon { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .activity-text { font-size: 13px; color: var(--muted); line-height: 1.5; flex: 1; }
+  .activity-text strong { color: var(--white); }
+  .activity-time { font-family: var(--font-mono); font-size: 10px; color: rgba(240,240,248,0.25); }
+
+  /* Subscription card */
+  .sub-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+  }
+  .sub-plan-badge {
+    display: inline-block;
+    background: var(--red);
+    color: var(--white);
+    font-family: var(--font-display);
+    font-size: 14px;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+  }
+  .sub-detail { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .sub-detail-label { color: var(--muted); }
+  .sub-detail-value { font-family: var(--font-mono); font-size: 12px; }
+
+  /* ─── TOAST NOTIFICATION ─── */
+  .toast {
+    position: fixed; bottom: 32px; right: 32px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid #22ff88;
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    z-index: 1000;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.4s;
+    max-width: 320px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-title { color: #22ff88; margin-bottom: 4px; font-size: 11px; }
+  .toast-msg { color: var(--white); }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+    animation: fadeUp 0.4s ease;
+  }
+  .modal-icon { font-size: 64px; margin-bottom: 24px; }
+  .modal-title { font-family: var(--font-display); font-size: 42px; margin-bottom: 12px; }
+  .modal-url {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--cyan);
+    background: var(--surface);
+    padding: 12px 20px;
+    border-radius: 6px;
+    margin: 20px 0;
+    border: 1px solid var(--border);
+  }
+  .modal-sub { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 32px; }
+  .modal-actions { display: flex; gap: 12px; justify-content: center; }
+
+  /* ═══════════════════════════════════════════════════════
+     RESPONSIVE SYSTEM — Full breakpoint coverage
+     1200px → 1024px → 768px → 480px → 360px
+     Zero changes to existing layout/design above 1200px
+  ═══════════════════════════════════════════════════════ */
+
+  /* ── Mobile hamburger menu (hidden by default) ── */
+  .nav-hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    padding: 4px;
+    background: transparent;
+    border: none;
+  }
+  .nav-hamburger span {
+    display: block;
+    width: 24px; height: 2px;
+    background: var(--white);
+    border-radius: 2px;
+    transition: all 0.3s;
+  }
+  .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-hamburger.open span:nth-child(2) { opacity: 0; }
+  .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* Mobile nav drawer */
+  .nav-drawer {
+    display: none;
+    position: fixed;
+    top: 64px; left: 0; right: 0;
+    background: rgba(8,8,16,0.98);
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+    z-index: 99;
+    padding: 16px 0 24px;
+    flex-direction: column;
+  }
+  .nav-drawer.open { display: flex; }
+  .nav-drawer a {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-decoration: none;
+    text-transform: uppercase;
+    padding: 14px 28px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+  }
+  .nav-drawer a:hover { color: var(--white); background: rgba(255,255,255,0.04); }
+  .nav-drawer .nav-cta {
+    margin: 16px 28px 0;
+    background: var(--red);
+    color: var(--white) !important;
+    text-align: center;
+    border-radius: 4px;
+    border-bottom: none !important;
+  }
+
+  /* Mobile bottom nav for dashboard */
+  .mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 90;
+    padding: 8px 0 env(safe-area-inset-bottom, 8px);
+  }
+  .mobile-bottom-nav-items {
+    display: flex;
+    justify-content: space-around;
+  }
+  .mob-nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: color 0.2s;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    min-width: 56px;
+  }
+  .mob-nav-item:hover, .mob-nav-item.active { color: var(--red); }
+  .mob-nav-item span:first-child { font-size: 18px; }
+
+  /* ── LARGE DESKTOP: 1200px ── */
+  @media (max-width: 1200px) {
+    .hero { padding: 60px 40px 60px 60px; gap: 40px; }
+    .features { padding: 80px 60px; }
+    .pricing-teaser { padding: 60px; }
+    .pricing-grid { margin: 0 24px; }
+    .page-header { padding: 60px 60px 0; }
+    .checkout-grid { padding: 40px 24px 80px; }
+    .main-content { padding: 32px 28px; }
+  }
+
+  /* ── TABLET LANDSCAPE: 1024px ── */
+  @media (max-width: 1024px) {
+    nav { padding: 16px 28px; }
+    .nav-links { gap: 20px; }
+    .nav-links a { font-size: 11px; }
+
+    .hero { padding: 50px 28px 50px 40px; gap: 32px; }
+    .hero-title { font-size: clamp(52px, 7vw, 80px); }
+    .phone-frame { width: 220px; }
+
+    .features { padding: 70px 40px; }
+    .features-grid { grid-template-columns: repeat(2, 1fr); }
+    .section-title { font-size: clamp(40px, 5vw, 64px); }
+
+    .pricing-grid { grid-template-columns: repeat(2, 1fr); margin: 0 16px; }
+    .pricing-card { padding: 32px 22px 28px; }
+    .pricing-num { font-size: 44px; }
+
+    .page-header { padding: 50px 40px 0; }
+    .page-title { font-size: clamp(48px, 6vw, 76px); }
+
+    .dashboard-layout { grid-template-columns: 220px 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .dash-grid { grid-template-columns: 1fr; }
+
+    .checkout-grid { gap: 28px; padding: 40px 20px 80px; }
+    .wizard-container { padding: 50px 28px 80px; }
+  }
+
+  /* ── TABLET PORTRAIT: 768px ── */
+  @media (max-width: 768px) {
+    /* Nav → hamburger */
+    nav { padding: 14px 20px; }
+    .nav-links { display: none; }
+    .nav-hamburger { display: flex; }
+
+    /* Pages */
+    .page { padding-top: 64px; }
+
+    /* Page 1 — Hero */
+    .hero {
+      grid-template-columns: 1fr;
+      padding: 40px 20px 60px;
+      gap: 40px;
+      min-height: auto;
+    }
+    .hero-visual { display: none; }
+    .hero-title { font-size: clamp(48px, 10vw, 72px); }
+    .hero-sub { font-size: 15px; max-width: 100%; }
+    .hero-stats { gap: 24px; flex-wrap: wrap; margin-top: 36px; }
+    .stat-num { font-size: 28px; }
+    .hero-badge { font-size: 10px; }
+    .hero-actions { flex-direction: column; gap: 12px; }
+    .hero-actions .btn-primary,
+    .hero-actions .btn-ghost { width: 100%; text-align: center; padding: 16px 24px; }
+
+    .features { padding: 56px 20px; }
+    .features-grid { grid-template-columns: 1fr; gap: 2px; }
+    .section-title { font-size: clamp(36px, 8vw, 56px); margin-bottom: 40px; }
+
+    .pricing-teaser { padding: 56px 20px; }
+
+    /* Page 2 — Pricing */
+    .pricing-grid { grid-template-columns: 1fr; margin: 0 16px; gap: 2px; }
+    .pricing-card.featured { order: -1; }
+    .page-header { padding: 40px 20px 0; }
+    .page-title { font-size: clamp(42px, 9vw, 64px); }
+    .pricing-note { padding: 24px 20px; font-size: 10px; }
+    /* Add-ons grid */
+    #page2 > div:last-child { padding: 48px 20px; }
+    #page2 > div:last-child > div { grid-template-columns: 1fr 1fr !important; }
+
+    /* Page 3 — Wizard */
+    .wizard-container { padding: 32px 16px 80px; }
+    .wizard-title { font-size: 40px; }
+    .wizard-progress { gap: 0; overflow-x: auto; padding-bottom: 8px; }
+    .step-label { font-size: 8px; white-space: nowrap; }
+    .form-grid { grid-template-columns: 1fr; gap: 16px; }
+    .form-group.full { grid-column: span 1; }
+    .template-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .toggle-grid { grid-template-columns: 1fr; }
+    .color-row { flex-direction: column; gap: 20px; }
+    .subdomain-input { padding-right: 130px; }
+    .subdomain-suffix { font-size: 10px; right: 10px; }
+    .wizard-nav { flex-direction: column-reverse; gap: 12px; }
+    .wizard-nav .wizard-next,
+    .wizard-nav .wizard-back { width: 100%; text-align: center; }
+
+    /* Page 4 — Checkout */
+    .checkout-grid {
+      grid-template-columns: 1fr;
+      padding: 24px 16px 80px;
+      gap: 24px;
+    }
+    .preview-phone-wrap { padding: 24px; }
+    .preview-phone { width: 200px; }
+    .order-card { position: static; }
+
+    /* Page 5 — Dashboard */
+    .dashboard-layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .mobile-bottom-nav { display: block; }
+    .main-content { padding: 24px 16px 90px; }
+    .dash-greeting-name { font-size: 36px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat-card-num { font-size: 36px; }
+    .dash-grid { grid-template-columns: 1fr; }
+    .live-url-card { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .live-url { font-size: 12px; word-break: break-all; }
+    .live-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+    .action-btn { font-size: 9px; padding: 8px 12px; }
+    .quick-edit-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .quick-edit-row > div:last-child { width: 100%; justify-content: space-between; }
+
+    /* Modal */
+    .modal { padding: 32px 24px; }
+    .modal-title { font-size: 32px; }
+    .modal-url { font-size: 13px; word-break: break-all; }
+    .modal-actions { flex-direction: column; }
+    .modal-actions button { width: 100%; }
+  }
+
+  /* ── MOBILE: 480px ── */
+  @media (max-width: 480px) {
+    nav { padding: 12px 16px; }
+    .nav-logo { font-size: 22px; letter-spacing: 2px; }
+
+    /* Page 1 */
+    .hero { padding: 32px 16px 48px; }
+    .hero-title { font-size: clamp(42px, 12vw, 58px); }
+    .hero-sub { font-size: 14px; margin: 16px 0 28px; }
+    .hero-badge { font-size: 9px; padding: 6px 12px; }
+    .hero-stats { gap: 16px; margin-top: 28px; }
+    .stat { padding-left: 12px; }
+    .stat-num { font-size: 24px; }
+    .stat-label { font-size: 9px; }
+
+    .features { padding: 44px 16px; }
+    .feature-card { padding: 28px 20px; }
+    .feature-title { font-size: 22px; }
+    .section-title { font-size: clamp(32px, 9vw, 44px); margin-bottom: 32px; }
+
+    .pricing-teaser { padding: 44px 16px; }
+    .pricing-teaser .section-title { font-size: clamp(32px, 9vw, 44px); }
+
+    /* Pricing */
+    .page-header { padding: 32px 16px 0; }
+    .page-title { font-size: clamp(36px, 10vw, 52px); }
+    .page-sub { font-size: 14px; margin-bottom: 40px; }
+    .pricing-grid { margin: 0 12px; }
+    .pricing-card { padding: 28px 18px 24px; }
+    .pricing-name { font-size: 28px; }
+    .pricing-num { font-size: 40px; }
+    .pricing-cta { padding: 12px; font-size: 12px; }
+    #page2 > div:last-child > div { grid-template-columns: 1fr !important; }
+
+    /* Wizard */
+    .wizard-container { padding: 24px 14px 80px; }
+    .wizard-title { font-size: 34px; }
+    .wizard-subtitle { font-size: 10px; letter-spacing: 1px; margin-bottom: 28px; }
+    .template-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .template-icon { font-size: 22px; }
+    .template-name { font-size: 8px; }
+    .step-circle { width: 28px; height: 28px; font-size: 10px; }
+    .form-input { font-size: 14px; padding: 12px 14px; }
+    .subdomain-suffix { font-size: 9px; }
+    .subdomain-input { padding-right: 110px; }
+    .color-dot { width: 26px; height: 26px; }
+    .upload-zone { padding: 24px 16px; }
+    .upload-icon { font-size: 28px; }
+
+    /* Checkout */
+    .checkout-grid { padding: 20px 12px 80px; gap: 20px; }
+    .preview-phone { width: 180px; }
+    .preview-phone-wrap { padding: 20px; }
+    .order-header { font-size: 22px; padding: 18px 18px; }
+    .order-line { padding: 12px 18px; }
+    .order-total { padding: 16px 18px; }
+    .order-total-label { font-size: 16px; }
+    .order-total-amount { font-size: 26px; }
+    .pay-btn { margin: 14px 18px; width: calc(100% - 36px); font-size: 13px; padding: 16px; }
+    .coupon-row { padding: 14px 18px; }
+    .pay-secure { padding: 0 18px 18px; font-size: 9px; }
+
+    /* Dashboard */
+    .main-content { padding: 20px 14px 90px; }
+    .dash-greeting-name { font-size: 30px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { padding: 16px 14px 12px; }
+    .stat-card-num { font-size: 30px; }
+    .dash-card-header { padding: 16px 18px; }
+    .dash-card-body { padding: 16px 18px; }
+    .dash-card-title { font-size: 18px; }
+    .live-url { font-size: 11px; }
+  }
+
+  /* ── SMALL MOBILE: 360px ── */
+  @media (max-width: 360px) {
+    .hero-title { font-size: 38px; }
+    .hero-actions .btn-primary,
+    .hero-actions .btn-ghost { padding: 14px 20px; font-size: 13px; }
+
+    .pricing-num { font-size: 34px; }
+    .pricing-name { font-size: 24px; }
+
+    .stats-grid { grid-template-columns: 1fr; }
+    .stat-card-num { font-size: 40px; }
+
+    .wizard-title { font-size: 28px; }
+    .template-grid { grid-template-columns: repeat(2, 1fr); }
+
+    .modal-url { font-size: 11px; }
+
+    .mob-nav-item { min-width: 44px; padding: 6px 8px; font-size: 8px; }
+  }
+
+  /* ── TOUCH DEVICE IMPROVEMENTS ── */
+  @media (hover: none) and (pointer: coarse) {
+    .btn-primary:hover, .btn-ghost:hover,
+    .pricing-cta:hover, .wizard-next:hover,
+    .wizard-back:hover, .pay-btn:hover,
+    .action-btn:hover, .sidebar-item:hover {
+      transform: none;
+    }
+    .feature-card:hover::before { width: 0; }
+    .stat-card:hover::after { transform: scaleX(0); }
+    /* Bigger tap targets on touch */
+    .pricing-cta { padding: 16px; }
+    .form-input { font-size: 16px; } /* prevents iOS zoom on focus */
+    .coupon-input { font-size: 16px; }
+    .toggle-item { padding: 18px 20px; }
+    .sidebar-item { padding: 14px; }
+  }
+
+  /* ── LANDSCAPE MOBILE ── */
+  @media (max-width: 768px) and (orientation: landscape) {
+    .hero { min-height: auto; padding: 40px 24px; }
+    .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+    .wizard-container { padding: 24px 24px 60px; }
+    .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    .mobile-bottom-nav { display: none; }
+    .main-content { padding-bottom: 40px; }
+  }
+
+  /* ── SAFE AREA (iPhone notch/home indicator) ── */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    .mobile-bottom-nav {
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+    nav {
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+  <div class="nav-logo" onclick="showPage('page1')">CARD<span>U</span>LATOR</div>
+  <div class="nav-links">
+    <a onclick="showPage('page1')">Home</a>
+    <a onclick="showPage('page2')">Pricing</a>
+    <a onclick="showPage('page3')">Build Yours</a>
+    <a onclick="showPage('page5')">Dashboard</a>
+    <a onclick="showPage('page3')" class="nav-cta">Get Started →</a>
+    <a href="https://star-india-agencies-calculator-mech.vercel.app/#" class="nav-cta">Preview Cardulator App →</a>
+  </div>
+  <button class="nav-hamburger" id="hamburger" onclick="toggleNav()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile Nav Drawer -->
+<div class="nav-drawer" id="navDrawer">
+  <a onclick="navTo('page1')">Home</a>
+  <a onclick="navTo('page2')">Pricing</a>
+  <a onclick="navTo('page3')">Build Yours</a>
+  <a onclick="navTo('page5')">Dashboard</a>
+  <a onclick="navTo('page3')" class="nav-cta">Get Started →</a>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 1: LANDING                            -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="page1" class="page active">
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        Now live — 120+ dealerships using Cardulator
+      </div>
+      <h1 class="hero-title">
+        <span>YOUR</span>
+        <span class="line-red">BUSINESS.</span>
+        <span class="line-outline">ONE LINK.</span>
+        <span>EVERY PHONE.</span>
+      </h1>
+      <p class="hero-sub">
+        A branded calculator app that doubles as your most powerful digital business card. Your customers install it, use it daily, and call you directly. No app store. No developer. Live in 3 minutes.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="showPage('page3')">Build Your Cardulator →</button>
+        <button class="btn-ghost" onclick="showPage('page2')">View Pricing</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="stat-num">3<span style="color:var(--red)">MIN</span></div>
+          <div class="stat-label">Delivery Time</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">₹0</div>
+          <div class="stat-label">App Store Fee</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">∞</div>
+          <div class="stat-label">Subdomains</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="glow-ring"></div>
+      <div class="glow-ring-2"></div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="phone-header">
+            <div class="phone-brand">STAR INDIA AGENCIES</div>
+            <div class="phone-btns">
+              <div class="phone-btn phone-btn-settings">⚙ SETTINGS</div>
+              <div class="phone-btn phone-btn-contact">📞 CONTACT</div>
+            </div>
+          </div>
+          <div class="phone-display">0</div>
+          <div class="phone-grid">
+            <div class="phone-key op">C</div>
+            <div class="phone-key op">÷</div>
+            <div class="phone-key op">×</div>
+            <div class="phone-key op">⌫</div>
+            <div class="phone-key">🚙<br>7</div>
+            <div class="phone-key">🚗<br>8</div>
+            <div class="phone-key">🏎<br>9</div>
+            <div class="phone-key op">−</div>
+            <div class="phone-key">🚘<br>4</div>
+            <div class="phone-key">🚙<br>5</div>
+            <div class="phone-key">🚗<br>6</div>
+            <div class="phone-key op">+</div>
+            <div class="phone-key">🔴<br>1</div>
+            <div class="phone-key">🟡<br>2</div>
+            <div class="phone-key">🟠<br>3</div>
+            <div class="phone-key op">=</div>
+            <div class="phone-key wide">0</div>
+            <div class="phone-key op">.</div>
+            <div class="phone-key op" style="color:var(--cyan);font-size:7px">HIST</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="section-label">// What you get</div>
+    <h2 class="section-title">BUILT FOR<br><span style="color:var(--red)">REAL BUSINESS</span></h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">📱</span>
+        <div class="feature-title">INSTALLS ON ANY PHONE</div>
+        <p class="feature-desc">PWA technology means your clients tap "Add to Home Screen" once. Your brand lives on their phone permanently. No Play Store. No App Store. No waiting.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⚡</span>
+        <div class="feature-title">LIVE IN 3 MINUTES</div>
+        <p class="feature-desc">Fill in your details. Pick your colors. Pay. Your app is automatically deployed to yourname.cardulator.in with SSL, CDN, and a custom QR code — instantly.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🎯</span>
+        <div class="feature-title">DIRECT BOOKING BUTTONS</div>
+        <p class="feature-desc">Book New Car. Book Test Drive. Book Service. WhatsApp Us. Every button routes directly to your dealership. Zero friction between curiosity and conversion.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🎨</span>
+        <div class="feature-title">FULLY BRANDED</div>
+        <p class="feature-desc">Your logo. Your colors. Your cars. Your models on the number buttons. Customers don't see a template — they see YOUR app. Competitors have nothing like this.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📊</span>
+        <div class="feature-title">MONTHLY ANALYTICS</div>
+        <p class="feature-desc">Know exactly how many times your card was shared, how many contact taps happened, and how many installations. Real data. Not guesswork.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔄</span>
+        <div class="feature-title">INSTANT UPDATES</div>
+        <p class="feature-desc">New phone number? New car model launched? New branch? Update once in your dashboard. Every installed version updates automatically. No redistribution needed.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing-teaser">
+    <div class="section-label" style="justify-content:center;display:flex">// Simple pricing</div>
+    <h2 class="section-title" style="margin-bottom:32px">STARTS AT <span style="color:var(--red)">₹999/MO</span></h2>
+    <p style="color:var(--muted);max-width:480px;margin:0 auto 40px;font-size:15px;line-height:1.7">Small setup fee. Low monthly. Cancel anytime. From freelancers to enterprise dealer chains — there's a plan that fits.</p>
+    <button class="btn-primary" onclick="showPage('page2')">See All Plans →</button>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 2: PRICING                            -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="page2" class="page">
+
+  <div class="page-header">
+    <div class="section-label" style="display:inline-block">// Pricing Plans</div>
+    <h1 class="page-title">PICK YOUR<br><span style="color:var(--red)">TIER</span></h1>
+    <p class="page-sub">Every plan includes PWA installation, SSL, global CDN, and your own subdomain. No hidden fees. No developer needed.</p>
+  </div>
+
+  <div class="pricing-grid">
+    <!-- Tier 1 -->
+    <div class="pricing-card">
+      <div class="pricing-tier">Tier 01</div>
+      <div class="pricing-name">STARTER</div>
+      <div class="pricing-tag">// Students & Freelancers</div>
+      <div class="pricing-amount">
+        <span class="pricing-currency">₹</span>
+        <span class="pricing-num">999</span>
+      </div>
+      <div class="pricing-period">per month</div>
+      <div class="pricing-setup">+ ₹4,999 one-time setup</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li class="highlight">Standard Cardulator template</li>
+        <li>Your branding, logo & colors</li>
+        <li>yourname.cardulator.in subdomain</li>
+        <li>WhatsApp + Call buttons</li>
+        <li>PWA — installs on home screen</li>
+        <li>Instagram & website links</li>
+        <li>QR code for sharing</li>
+        <li>Email support</li>
+      </ul>
+      <button class="pricing-cta pricing-cta-outline" onclick="startBuild('starter')">Get Started →</button>
+    </div>
+
+    <!-- Tier 2 -->
+    <div class="pricing-card">
+      <div class="pricing-tier">Tier 02</div>
+      <div class="pricing-name">PRO</div>
+      <div class="pricing-tag">// Agents & Consultants</div>
+      <div class="pricing-amount">
+        <span class="pricing-currency">₹</span>
+        <span class="pricing-num">1,999</span>
+      </div>
+      <div class="pricing-period">per month</div>
+      <div class="pricing-setup">+ ₹14,999 one-time setup</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li class="highlight">Everything in Starter</li>
+        <li>Custom domain integration</li>
+        <li>3 custom pages (Home, Services, Contact)</li>
+        <li>Appointment booking button</li>
+        <li>Google Maps integration</li>
+        <li>Portfolio / listings section</li>
+        <li>Custom app icon & splash screen</li>
+        <li>Monthly stats report</li>
+        <li>Priority WhatsApp support</li>
+      </ul>
+      <button class="pricing-cta pricing-cta-outline" onclick="startBuild('pro')">Get Started →</button>
+    </div>
+
+    <!-- Tier 3 - Featured -->
+    <div class="pricing-card featured">
+      <div style="position:absolute;top:0;right:20px;background:var(--cyan);color:var(--black);font-family:var(--font-mono);font-size:9px;letter-spacing:2px;padding:4px 12px;border-radius:0 0 8px 8px;font-weight:700">MOST POPULAR</div>
+      <div class="pricing-tier">Tier 03</div>
+      <div class="pricing-name">DEALER</div>
+      <div class="pricing-tag">// Showrooms & Chains</div>
+      <div class="pricing-amount">
+        <span class="pricing-currency">₹</span>
+        <span class="pricing-num">4,999</span>
+      </div>
+      <div class="pricing-period">per month</div>
+      <div class="pricing-setup">+ ₹49,999 one-time setup</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li class="highlight">Full custom UI like demo app</li>
+        <li class="highlight">Car/product images on buttons</li>
+        <li class="highlight">Up to 10 staff sub-cards</li>
+        <li>Branded calculator feature</li>
+        <li>Subdomain on YOUR domain</li>
+        <li>Book Car / Test Drive / Service CTAs</li>
+        <li>Seasonal theme updates</li>
+        <li>New model launch updates</li>
+        <li>Monthly analytics dashboard</li>
+        <li>Dedicated WhatsApp support</li>
+        <li>Play Store listing (+₹9,999)</li>
+      </ul>
+      <button class="pricing-cta pricing-cta-cyan" onclick="startBuild('dealer')">Build Now →</button>
+    </div>
+
+    <!-- Tier 4 -->
+    <div class="pricing-card">
+      <div class="pricing-tier">Tier 04</div>
+      <div class="pricing-name">WHITE<br>LABEL</div>
+      <div class="pricing-tag">// Agencies & Resellers</div>
+      <div class="pricing-amount">
+        <span class="pricing-currency">₹</span>
+        <span class="pricing-num">9,999</span>
+      </div>
+      <div class="pricing-period">per month</div>
+      <div class="pricing-setup">+ ₹99,999 one-time license</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li class="highlight">Full source code delivered</li>
+        <li class="highlight">Rebrand as YOUR product</li>
+        <li class="highlight">Resell to unlimited clients</li>
+        <li>GitHub repo + deployment docs</li>
+        <li>Google Drive download link</li>
+        <li>Setup documentation</li>
+        <li>3 months backend support</li>
+        <li>Brandable asset folder</li>
+        <li>20% referral commission option</li>
+        <li>NDA available on request</li>
+      </ul>
+      <button class="pricing-cta pricing-cta-primary" onclick="startBuild('whitelabel')">License Now →</button>
+    </div>
+  </div>
+
+  <div class="pricing-note">
+    All prices in INR · GST applicable · Cancel anytime · Source code escrow available for Tier 4 ·
+    <span style="color:var(--white);cursor:pointer" onclick="showPage('page3')"> Start building →</span>
+  </div>
+
+  <!-- Add-ons -->
+  <div style="padding:60px 40px;border-top:1px solid var(--border)">
+    <div class="section-label">// Add-ons</div>
+    <h3 class="section-title" style="font-size:clamp(36px,4vw,52px);margin-bottom:32px">POWER-UPS</h3>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--border)">
+      <div class="feature-card" style="padding:28px 24px">
+        <div class="feature-title" style="font-size:18px;margin-bottom:8px">Play Store Listing</div>
+        <div style="color:var(--red);font-family:var(--font-display);font-size:28px;margin-bottom:8px">₹9,999</div>
+        <div class="feature-desc">One-time. We package your PWA into an APK and submit to Google Play.</div>
+      </div>
+      <div class="feature-card" style="padding:28px 24px">
+        <div class="feature-title" style="font-size:18px;margin-bottom:8px">Seasonal Theme</div>
+        <div style="color:var(--red);font-family:var(--font-display);font-size:28px;margin-bottom:8px">₹2,999</div>
+        <div class="feature-desc">Diwali, New Year, launch events — we update your app theme on demand.</div>
+      </div>
+      <div class="feature-card" style="padding:28px 24px">
+        <div class="feature-title" style="font-size:18px;margin-bottom:8px">Extra Staff Cards</div>
+        <div style="color:var(--red);font-family:var(--font-display);font-size:28px;margin-bottom:8px">₹999/mo</div>
+        <div class="feature-desc">Each salesperson gets their own subdomain. Tracks individual performance.</div>
+      </div>
+      <div class="feature-card" style="padding:28px 24px">
+        <div class="feature-title" style="font-size:18px;margin-bottom:8px">Custom Animation</div>
+        <div style="color:var(--red);font-family:var(--font-display);font-size:28px;margin-bottom:8px">₹14,999</div>
+        <div class="feature-desc">Bespoke loading animation, car reveal effects, branded micro-interactions.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 3: ONBOARDING WIZARD                  -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="page3" class="page">
+  <div class="wizard-container">
+
+    <!-- Progress bar -->
+    <div class="wizard-progress">
+      <div class="step-wrapper">
+        <div class="step-circle active" id="sc1" onclick="goToStep(1)">1</div>
+        <div class="step-label">Template</div>
+      </div>
+      <div class="step-line" id="sl1"></div>
+      <div class="step-wrapper">
+        <div class="step-circle" id="sc2" onclick="goToStep(2)">2</div>
+        <div class="step-label">Details</div>
+      </div>
+      <div class="step-line" id="sl2"></div>
+      <div class="step-wrapper">
+        <div class="step-circle" id="sc3" onclick="goToStep(3)">3</div>
+        <div class="step-label">Brand</div>
+      </div>
+      <div class="step-line" id="sl3"></div>
+      <div class="step-wrapper">
+        <div class="step-circle" id="sc4" onclick="goToStep(4)">4</div>
+        <div class="step-label">Links</div>
+      </div>
+      <div class="step-line" id="sl4"></div>
+      <div class="step-wrapper">
+        <div class="step-circle" id="sc5" onclick="goToStep(5)">5</div>
+        <div class="step-label">Features</div>
+      </div>
+    </div>
+
+    <!-- STEP 1: Template -->
+    <div class="wizard-panel active" id="step1">
+      <div class="section-label">Step 01 of 05</div>
+      <div class="wizard-title">CHOOSE YOUR<br><span style="color:var(--red)">TEMPLATE</span></div>
+      <div class="wizard-subtitle">Pick the template that fits your industry</div>
+      <div class="template-grid">
+        <div class="template-option selected" onclick="selectTemplate(this, 'dealer-pro')">
+          <div class="template-icon">🚗</div>
+          <div class="template-name">Dealer Pro</div>
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--cyan);margin-top:4px;letter-spacing:1px">PNG KEYS</div>
+        </div>
+        <div class="template-option" onclick="selectTemplate(this, 'dealer-slider')">
+          <div class="template-icon">🎠</div>
+          <div class="template-name">Dealer Slider</div>
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--cyan);margin-top:4px;letter-spacing:1px">CAR OFFERS</div>
+        </div>
+        <div class="template-option" onclick="selectTemplate(this, 'realestate')">
+          <div class="template-icon">🏠</div>
+          <div class="template-name">Real Estate</div>
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);margin-top:4px;letter-spacing:1px">COMING SOON</div>
+        </div>
+        <div class="template-option" onclick="selectTemplate(this, 'medical')">
+          <div class="template-icon">🏥</div>
+          <div class="template-name">Medical</div>
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);margin-top:4px;letter-spacing:1px">COMING SOON</div>
+        </div>
+        <div class="template-option" onclick="selectTemplate(this, 'standard')">
+          <div class="template-icon">⚡</div>
+          <div class="template-name">Standard</div>
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--muted);margin-top:4px;letter-spacing:1px">COMING SOON</div>
+        </div>
+      </div>
+
+      <!-- Template preview descriptions -->
+      <div id="tplDesc-dealer-pro" style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--cyan);border-radius:8px;padding:20px 24px;margin-bottom:24px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--cyan);letter-spacing:2px;margin-bottom:10px">DEALER PRO — index.html (PNG Keys)</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px">Calculator with <strong style="color:var(--white)">your own car PNG images on each number key (1–9)</strong>. RGB animated border. 4 audio switch modes. Contact popup with 3 booking buttons.</p>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);letter-spacing:1px">REQUIRES: 9 PNG car images · Business name · 3 phone numbers · WhatsApp</div>
+      </div>
+      <div id="tplDesc-dealer-slider" style="display:none;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:8px;padding:20px 24px;margin-bottom:24px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:10px">DEALER SLIDER — index3.html (Rotating Offers)</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px">Calculator with <strong style="color:var(--white)">rotating car offer banner below keys</strong>. 3 auto-rotating offers with direct WhatsApp links. Live offer ticker. RGB frame + theme switcher.</p>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);letter-spacing:1px">REQUIRES: 1 banner image · 3 offer texts · 3 WhatsApp messages · Ticker text</div>
+      </div>
+      <div id="tplDesc-realestate" style="display:none;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--muted);border-radius:8px;padding:20px 24px;margin-bottom:24px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px">COMING SOON</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7">Real Estate template is in development. Select Dealer Pro or Dealer Slider to continue.</p>
+      </div>
+      <div id="tplDesc-medical" style="display:none;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--muted);border-radius:8px;padding:20px 24px;margin-bottom:24px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px">COMING SOON</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7">Medical template is in development. Select Dealer Pro or Dealer Slider to continue.</p>
+      </div>
+      <div id="tplDesc-standard" style="display:none;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--muted);border-radius:8px;padding:20px 24px;margin-bottom:24px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px">COMING SOON</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7">Standard template is in development. Select Dealer Pro or Dealer Slider to continue.</p>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="wizard-back" onclick="showPage('page2')">← Back to Pricing</button>
+        <button class="wizard-next" onclick="nextStep(2)">Next: Business Details →</button>
+      </div>
+    </div>
+
+        <!-- STEP 2: Details -->
+    <div class="wizard-panel" id="step2">
+      <div class="section-label">Step 02 of 05</div>
+      <div class="wizard-title">YOUR<br><span style="color:var(--red)">DETAILS</span></div>
+      <div class="wizard-subtitle">This becomes your live app content</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Business Name *</label>
+          <input class="form-input" type="text" placeholder="Star India Agencies Pvt. Ltd." id="businessName" oninput="liveUpdatePreview()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your Name *</label>
+          <input class="form-input" type="text" placeholder="Rajesh Kumar" id="ownerName">
+        </div>
+        <div class="form-group">
+          <label class="form-label">📞 Main Phone (Book Car / Test Drive) *</label>
+          <input class="form-input" type="tel" placeholder="7067321621" id="phone">
+        </div>
+        <div class="form-group">
+          <label class="form-label">🛠️ Service Booking Phone *</label>
+          <input class="form-input" type="tel" placeholder="9800055555" id="servicePhone">
+        </div>
+        <div class="form-group">
+          <label class="form-label">💬 WhatsApp Number (with country code) *</label>
+          <input class="form-input" type="tel" placeholder="917067321621" id="whatsapp">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tagline / Description</label>
+          <input class="form-input" type="text" placeholder="Authorized Mahindra Dealer · Mumbai" id="tagline">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Choose Your Subdomain *</label>
+          <div class="subdomain-group">
+            <input class="form-input subdomain-input" type="text" placeholder="starindiaagencies" id="subdomain" oninput="checkSubdomain(this)">
+            <span class="subdomain-suffix">.cardulator.in</span>
+          </div>
+          <div class="subdomain-check avail" id="subdomainStatus">✓ Available — looks great!</div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="wizard-back" onclick="nextStep(1)">← Back</button>
+        <button class="wizard-next" onclick="nextStep(3)">Next: Brand & Assets →</button>
+      </div>
+    </div>
+
+        <!-- STEP 3: Brand -->
+    <div class="wizard-panel" id="step3">
+      <div class="section-label">Step 03 of 05</div>
+      <div class="wizard-title">YOUR<br><span style="color:var(--red)">BRAND</span></div>
+      <div class="wizard-subtitle">Make it unmistakably yours</div>
+
+      <!-- Logo upload (both templates) -->
+      <div class="upload-zone" onclick="triggerLogoUpload()" id="logoZone">
+        <div class="upload-icon">🖼</div>
+        <div class="upload-text">CLICK TO UPLOAD YOUR LOGO<br><span style="opacity:0.5">PNG · Max 2MB · Transparent background preferred</span></div>
+        <input type="file" id="logoFile" style="display:none" accept="image/png,image/svg+xml,image/jpeg" onchange="previewLogo(this)">
+      </div>
+      <div id="logoPreview" style="display:none;margin-bottom:24px;text-align:center">
+        <img id="logoImg" style="max-height:80px;max-width:200px;border-radius:8px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:8px">LOGO LOADED ✓</div>
+      </div>
+
+      <!-- Theme + Audio selectors (both templates) -->
+      <div class="form-grid" style="margin-bottom:32px">
+        <div class="form-group">
+          <label class="form-label">🎨 Visual Theme</label>
+          <div id="themeOptions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🔊 Keyboard Audio Switch</label>
+          <div id="audioOptions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px"></div>
+        </div>
+      </div>
+
+      <!-- ═══ DEALER PRO SECTION (index.html) - 9 car PNG uploads ═══ -->
+      <div id="section-dealer-pro">
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--cyan);border-radius:8px;padding:20px 24px;margin-bottom:24px">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--cyan);letter-spacing:2px;margin-bottom:6px">DEALER PRO — CAR KEY IMAGES</div>
+          <p style="font-size:13px;color:var(--muted);line-height:1.6">Upload a PNG image for each number key (1–9). These appear above the digit on each calculator key. Use transparent-background PNGs for best results. Recommended: 100×60px.</p>
+        </div>
+        <div id="carKeyGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:32px">
+          <!-- JS will render 9 upload slots here -->
+        </div>
+      </div>
+
+      <!-- ═══ DEALER SLIDER SECTION (index3.html) - Banner + Offers ═══ -->
+      <div id="section-dealer-slider" style="display:none">
+        <div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:8px;padding:20px 24px;margin-bottom:24px">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:6px">DEALER SLIDER — OFFERS &amp; BANNER</div>
+          <p style="font-size:13px;color:var(--muted);line-height:1.6">Upload one banner image showing your car range. Then define 3 rotating offers — each has a display text and a pre-filled WhatsApp message customers send when they tap it.</p>
+        </div>
+
+        <!-- Banner image upload -->
+        <div class="form-group" style="margin-bottom:24px">
+          <label class="form-label">🖼 Car Range Banner Image (displayed in slider)</label>
+          <div class="upload-zone" onclick="triggerSliderUpload()" id="sliderZone" style="padding:20px 24px;margin-bottom:0">
+            <div class="upload-icon" style="font-size:24px;margin-bottom:8px">📸</div>
+            <div class="upload-text">CLICK TO UPLOAD BANNER IMAGE<br><span style="opacity:0.5">PNG/JPG · Recommended: 600×200px · Shows your car range</span></div>
+            <input type="file" id="sliderFile" style="display:none" accept="image/*" onchange="previewSlider(this)">
+          </div>
+          <div id="sliderPreview" style="display:none;margin-top:12px;text-align:center">
+            <img id="sliderImg" style="max-height:80px;max-width:100%;border-radius:8px;border:1px solid var(--border)">
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:6px">BANNER LOADED ✓</div>
+          </div>
+        </div>
+
+        <!-- 3 Offers -->
+        <div id="offerSlots">
+          <!-- Offer 1 -->
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:12px">
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:12px">OFFER 01</div>
+            <div class="form-grid" style="margin-bottom:0">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Marquee Offer Text</label>
+                <input class="form-input" type="text" placeholder="🚀 XUV700: 0% DOWNPAYMENT DEAL" id="offer1text">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">WhatsApp Message When Tapped</label>
+                <input class="form-input" type="text" placeholder="Hi! I want details on the XUV700 offer." id="offer1msg">
+              </div>
+            </div>
+          </div>
+          <!-- Offer 2 -->
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:12px">
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:12px">OFFER 02</div>
+            <div class="form-grid" style="margin-bottom:0">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Marquee Offer Text</label>
+                <input class="form-input" type="text" placeholder="🔥 THAR ROXX: BOOKINGS NOW OPEN" id="offer2text">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">WhatsApp Message When Tapped</label>
+                <input class="form-input" type="text" placeholder="I want to book the new THAR ROXX." id="offer2msg">
+              </div>
+            </div>
+          </div>
+          <!-- Offer 3 -->
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:24px">
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:12px">OFFER 03</div>
+            <div class="form-grid" style="margin-bottom:0">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Marquee Offer Text</label>
+                <input class="form-input" type="text" placeholder="👑 SCORPIO-N: THE BIG DADDY IS HERE" id="offer3text">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">WhatsApp Message When Tapped</label>
+                <input class="form-input" type="text" placeholder="Send me the Scorpio-N price list." id="offer3msg">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Marquee Ticker -->
+        <div class="form-group" style="margin-bottom:32px">
+          <label class="form-label">📺 Bottom Marquee Ticker Text</label>
+          <input class="form-input" type="text" placeholder="Visit Star India Agencies for Best Deals | Happy Holi | Professional Calculator Hub" id="marqueeText">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:6px;letter-spacing:1px">This scrolls across the bottom of your app. Use | to separate items.</div>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="wizard-back" onclick="nextStep(2)">← Back</button>
+        <button class="wizard-next" onclick="nextStep(4)">Next: Your Links →</button>
+      </div>
+    </div>
+
+        <!-- STEP 4: Links -->
+    <div class="wizard-panel" id="step4">
+      <div class="section-label">Step 04 of 05</div>
+      <div class="wizard-title">YOUR<br><span style="color:var(--red)">LINKS</span></div>
+      <div class="wizard-subtitle">Where do your buttons send customers?</div>
+
+      <!-- Dealer Pro social links note -->
+      <div id="step4-dealer-pro-note" style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--cyan);border-radius:8px;padding:16px 20px;margin-bottom:24px;font-size:13px;color:var(--muted);line-height:1.6">
+        <strong style="color:var(--cyan);font-family:var(--font-mono);font-size:10px;letter-spacing:2px">DEALER PRO:</strong> Social links appear as icon buttons in your contact popup.
+      </div>
+      <div id="step4-dealer-slider-note" style="display:none;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:8px;padding:16px 20px;margin-bottom:24px;font-size:13px;color:var(--muted);line-height:1.6">
+        <strong style="color:var(--red);font-family:var(--font-mono);font-size:10px;letter-spacing:2px">DEALER SLIDER:</strong> Links are optional for this template. WhatsApp is used in offers (set in previous step).
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">📸 Instagram URL</label>
+          <input class="form-input" type="url" placeholder="https://instagram.com/yourbusiness" id="instagram">
+        </div>
+        <div class="form-group">
+          <label class="form-label">👍 Facebook URL</label>
+          <input class="form-input" type="url" placeholder="https://facebook.com/yourbusiness" id="facebook">
+        </div>
+        <div class="form-group">
+          <label class="form-label">🌐 Website URL</label>
+          <input class="form-input" type="url" placeholder="https://yourwebsite.com" id="website">
+        </div>
+        <div class="form-group">
+          <label class="form-label">📍 Google Maps Link</label>
+          <input class="form-input" type="url" placeholder="https://maps.google.com/..." id="mapsLink">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Custom Button 1 — Label</label>
+          <input class="form-input" type="text" placeholder="Book New Car" id="btn1label">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Custom Button 1 — URL</label>
+          <input class="form-input" type="url" placeholder="https://wa.me/91XXXXXXXXXX" id="btn1url">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Custom Button 2 — Label</label>
+          <input class="form-input" type="text" placeholder="Book Test Drive" id="btn2label">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Custom Button 2 — URL</label>
+          <input class="form-input" type="url" placeholder="https://forms.gle/..." id="btn2url">
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="wizard-back" onclick="nextStep(3)">← Back</button>
+        <button class="wizard-next" onclick="nextStep(5)">Next: Features →</button>
+      </div>
+    </div>
+
+        <!-- STEP 5: Features -->
+    <div class="wizard-panel" id="step5">
+      <div class="section-label">Step 05 of 05</div>
+      <div class="wizard-title">ADD<br><span style="color:var(--red)">FEATURES</span></div>
+      <div class="wizard-subtitle">Select what powers up your Cardulator</div>
+      <div class="toggle-grid">
+        <div class="toggle-item" onclick="toggleFeature(this)">
+          <div class="toggle-info">
+            <div class="toggle-name">🧮 Calculator Feature</div>
+            <div class="toggle-meta">Core Cardulator experience</div>
+          </div>
+          <div class="toggle-switch on"></div>
+        </div>
+        <div class="toggle-item" onclick="toggleFeature(this)">
+          <div class="toggle-info">
+            <div class="toggle-name">📞 Contact Popup</div>
+            <div class="toggle-meta">Book Car / Test Drive / Service</div>
+          </div>
+          <div class="toggle-switch on"></div>
+        </div>
+        <div class="toggle-item" onclick="toggleFeature(this)">
+          <div class="toggle-info">
+            <div class="toggle-name">🚗 Product Images on Keys</div>
+            <div class="toggle-meta price">Dealer tier feature</div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="toggle-item" onclick="toggleFeature(this)">
+          <div class="toggle-info">
+            <div class="toggle-name">📊 Analytics Tracking</div>
+            <div class="toggle-meta price">Pro tier and above</div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="toggle-item" onclick="toggleFeature(this)">
+          <div class="toggle-info">
+            <div class="toggle-name">📅 Appointment Booking</div>
+            <div class="toggle-meta price">Pro tier and above</div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="toggle-item" onclick="toggleFeature(this)">
+          <div class="toggle-info">
+            <div class="toggle-name">🗓 Calculation History</div>
+            <div class="toggle-meta">HIST button feature</div>
+          </div>
+          <div class="toggle-switch on"></div>
+        </div>
+        <div class="toggle-item" onclick="toggleFeature(this)">
+          <div class="toggle-info">
+            <div class="toggle-name">🎆 Animated Intro</div>
+            <div class="toggle-meta price">Add-on · +₹14,999</div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="toggle-item" onclick="toggleFeature(this)">
+          <div class="toggle-info">
+            <div class="toggle-name">📱 Play Store Listing</div>
+            <div class="toggle-meta price">Add-on · +₹9,999</div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+      </div>
+
+      <!-- Order summary inline -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:8px">
+        <div style="font-family:var(--font-display);font-size:22px;letter-spacing:1px;margin-bottom:16px">YOUR ORDER</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <span style="color:var(--muted)">Template</span>
+          <span id="summaryTemplate" style="font-family:var(--font-mono);font-size:12px">Dealer</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <span style="color:var(--muted)">Subdomain</span>
+          <span id="summarySubdomain" style="font-family:var(--font-mono);font-size:12px;color:var(--cyan)">—.cardulator.in</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0">
+          <span style="color:var(--muted)">Plan</span>
+          <span id="summaryPlan" style="font-family:var(--font-mono);font-size:12px">Starter · ₹4,999 + ₹999/mo</span>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="wizard-back" onclick="nextStep(4)">← Back</button>
+        <button class="wizard-next" onclick="goToCheckout()">Preview & Pay →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 4: CHECKOUT                           -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="page4" class="page">
+  <div class="checkout-grid">
+
+    <!-- Live Preview -->
+    <div>
+      <div class="preview-frame">
+        <div class="preview-label" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="live-dot"></span>
+            LIVE PREVIEW
+          </div>
+          <div id="previewTemplateBadge" style="font-family:var(--font-mono);font-size:9px;color:var(--cyan);letter-spacing:1px">🚗 DEALER PRO · PNG KEYS</div>
+        </div>
+        <div class="preview-phone-wrap">
+          <div class="preview-phone">
+            <div class="preview-screen">
+              <!-- Dynamic preview based on wizard input -->
+              <div style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:8px">
+                <div id="previewBrand" style="font-family:var(--font-mono);font-size:7px;color:var(--red);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">YOUR BUSINESS NAME</div>
+                <div style="display:flex;gap:4px">
+                  <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:3px;padding:5px 8px;font-size:7px;font-family:var(--font-mono);color:var(--muted)">⚙ SETTINGS</div>
+                  <div style="flex:1;background:var(--red-dark);border-radius:3px;padding:5px 8px;font-size:7px;font-family:var(--font-mono);color:var(--white)">📞 CONTACT</div>
+                </div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);border-radius:6px;height:32px;margin-bottom:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-family:var(--font-mono);color:rgba(240,240,248,0.3);font-size:14px">0</div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px">
+                <div style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:3px;font-family:var(--font-mono);font-size:9px;color:rgba(255,255,255,0.4);font-size:8px">C</div>
+                <div style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:3px;font-family:var(--font-mono);font-size:9px;color:rgba(255,255,255,0.4);font-size:8px">÷</div>
+                <div style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:3px;font-family:var(--font-mono);font-size:9px;color:rgba(255,255,255,0.4);font-size:8px">×</div>
+                <div style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:3px;font-family:var(--font-mono);font-size:9px;color:rgba(255,255,255,0.4);font-size:8px">⌫</div>
+                <div id="previewKey7" style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:var(--red)">7</div>
+                <div id="previewKey8" style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:var(--red)">8</div>
+                <div id="previewKey9" style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:var(--red)">9</div>
+                <div style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:rgba(255,255,255,0.4)">−</div>
+                <div id="previewKey4" style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:var(--red)">4</div>
+                <div id="previewKey5" style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:var(--red)">5</div>
+                <div id="previewKey6" style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:var(--red)">6</div>
+                <div style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:rgba(255,255,255,0.4)">+</div>
+                <div id="previewKey1" style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:var(--red)">1</div>
+                <div id="previewKey2" style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:var(--red)">2</div>
+                <div id="previewKey3" style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:var(--red)">3</div>
+                <div style="background:#1a1a2e;border-radius:4px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;font-family:var(--font-mono);font-size:8px;color:rgba(255,255,255,0.4)">=</div>
+              </div>
+              <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:3px;margin-top:3px">
+                <div style="background:#1a1a2e;border-radius:4px;padding:5px 8px;font-family:var(--font-mono);font-size:8px;color:var(--red);text-align:center">0</div>
+                <div style="background:#1a1a2e;border-radius:4px;padding:5px 8px;font-family:var(--font-mono);font-size:8px;color:rgba(255,255,255,0.3);text-align:center">.</div>
+                <div style="background:#1a1a2e;border-radius:4px;padding:5px 8px;font-family:var(--font-mono);font-size:7px;color:var(--cyan);text-align:center">HIST</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- URL Preview -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-top:16px;display:flex;align-items:center;gap:16px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;flex-shrink:0">YOUR URL</div>
+        <div id="checkoutUrl" style="font-family:var(--font-mono);font-size:15px;color:var(--cyan);flex:1">yourchoice.cardulator.in</div>
+        <button onclick="copyUrl()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:3px;font-family:var(--font-mono);font-size:10px;cursor:pointer">COPY</button>
+      </div>
+    </div>
+
+    <!-- Order Card -->
+    <div class="order-card">
+      <div class="order-header">ORDER SUMMARY</div>
+
+      <div class="order-line">
+        <div>
+          <div class="order-item-name" id="orderPlanName">Dealer Setup</div>
+          <div class="order-item-desc">One-time fee · Includes custom build</div>
+        </div>
+        <div class="order-item-price" id="orderSetupPrice">₹49,999</div>
+      </div>
+
+      <div class="order-line">
+        <div>
+          <div class="order-item-name" id="orderMonthlyName">Monthly Subscription</div>
+          <div class="order-item-desc">First month included</div>
+        </div>
+        <div class="order-item-price" id="orderMonthlyPrice">₹4,999</div>
+      </div>
+
+      <div class="order-line" id="addOnRow" style="display:none">
+        <div>
+          <div class="order-item-name">Play Store Listing</div>
+          <div class="order-item-desc">One-time · Google Play submission</div>
+        </div>
+        <div class="order-item-price">₹9,999</div>
+      </div>
+
+      <div class="order-total">
+        <div class="order-total-label">DUE TODAY</div>
+        <div class="order-total-amount" id="orderTotal">₹54,998</div>
+      </div>
+      <div class="order-monthly" id="orderMonthlyNote">Then ₹4,999/month · Cancel anytime</div>
+
+      <div class="coupon-row">
+        <input class="coupon-input" type="text" placeholder="COUPON CODE" id="couponInput">
+        <button class="coupon-btn" onclick="applyCoupon()">APPLY</button>
+      </div>
+
+      <button class="pay-btn" onclick="processPayment()">
+        🔒 PAY WITH RAZORPAY
+      </button>
+      <div class="pay-secure">🛡 Secured by Razorpay · SSL Encrypted · GST Invoice included</div>
+
+      <!-- Download generated app file -->
+      <div style="margin:0 24px 24px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;text-align:center">AFTER PAYMENT — DOWNLOAD YOUR CUSTOMIZED APP FILE</div>
+        <button onclick="downloadGeneratedApp()" style="width:100%;padding:14px;background:var(--surface);border:1px solid var(--cyan);border-radius:6px;color:var(--cyan);font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(0,229,255,0.08)'" onmouseout="this.style.background='var(--surface)'">⬇ DOWNLOAD index.html</button>
+        <div style="font-family:var(--font-mono);font-size:9px;color:rgba(240,240,248,0.25);margin-top:8px;text-align:center;line-height:1.5">Upload this file to your Vercel subdomain.<br>All your data is embedded — ready to deploy.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 5: DASHBOARD                          -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="page5" class="page">
+  <div class="dashboard-layout">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">R</div>
+        <div class="sidebar-name">Rajesh Kumar</div>
+        <div class="sidebar-plan">Dealer Plan</div>
+      </div>
+      <div class="sidebar-menu">
+        <div class="sidebar-section-label">Main</div>
+        <div class="sidebar-item active">
+          <span class="sidebar-icon">📊</span> Overview
+        </div>
+        <div class="sidebar-item" onclick="showToast('Coming soon in v2!', 'ANALYTICS')">
+          <span class="sidebar-icon">📈</span> Analytics
+        </div>
+        <div class="sidebar-item" onclick="showToast('Opening editor...', 'QUICK EDIT')">
+          <span class="sidebar-icon">✏️</span> Edit Card
+        </div>
+        <div class="sidebar-item" onclick="showToast('QR generated!', 'QR CODE')">
+          <span class="sidebar-icon">📱</span> QR Code
+        </div>
+        <div class="sidebar-section-label">Manage</div>
+        <div class="sidebar-item" onclick="showToast('Staff cards available in Dealer plan', 'STAFF CARDS')">
+          <span class="sidebar-icon">👥</span> Staff Cards
+        </div>
+        <div class="sidebar-item" onclick="showToast('Fetching invoices...', 'BILLING')">
+          <span class="sidebar-icon">💳</span> Billing
+        </div>
+        <div class="sidebar-item" onclick="showToast('Support chat opening...', 'SUPPORT')">
+          <span class="sidebar-icon">💬</span> Support
+        </div>
+        <div class="sidebar-section-label">Account</div>
+        <div class="sidebar-item" onclick="showToast('Settings panel opening...', 'SETTINGS')">
+          <span class="sidebar-icon">⚙️</span> Settings
+        </div>
+        <div class="sidebar-item" onclick="showPage('page1')" style="margin-top:24px">
+          <span class="sidebar-icon">🚪</span> Log Out
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content">
+      <div class="dash-greeting">
+        <div class="dash-greeting-top">// Saturday, 28 Feb 2026</div>
+        <div class="dash-greeting-name">WELCOME BACK,<br><span style="color:var(--red)">RAJESH.</span></div>
+      </div>
+
+      <!-- Live URL bar -->
+      <div class="live-url-card">
+        <div class="live-url-left">
+          <div class="live-badge">LIVE</div>
+          <div class="live-url">starindiaagencies.cardulator.in</div>
+        </div>
+        <div class="live-actions">
+          <button class="action-btn" onclick="copyUrl()">📋 Copy Link</button>
+          <button class="action-btn" onclick="showToast('Sharing to WhatsApp...', 'WHATSAPP')">📲 Share</button>
+          <button class="action-btn primary" onclick="showToast('Opening your live app...', 'OPENING')">↗ Open App</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-label">Total Shares</div>
+          <div class="stat-card-num" style="color:var(--cyan)">847</div>
+          <div class="stat-card-trend up">↑ +23 this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Contact Taps</div>
+          <div class="stat-card-num" style="color:var(--white)">312</div>
+          <div class="stat-card-trend up">↑ +8 this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Installations</div>
+          <div class="stat-card-num" style="color:var(--red)">156</div>
+          <div class="stat-card-trend up">↑ +4 today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">WhatsApp Clicks</div>
+          <div class="stat-card-num" style="color:#22ff88">89</div>
+          <div class="stat-card-trend up">↑ +2 today</div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div>
+          <!-- Quick edit -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div class="dash-card-title">QUICK EDIT</div>
+              <button class="action-btn" onclick="showToast('Full editor opening...', 'EDITOR')">Edit All →</button>
+            </div>
+            <div class="dash-card-body">
+              <div class="quick-edit-row">
+                <div class="quick-edit-label">Business Name</div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div class="quick-edit-value">Star India Agencies Pvt. Ltd.</div>
+                  <button class="quick-edit-btn" onclick="showToast('Editing business name...', 'EDIT')">Edit</button>
+                </div>
+              </div>
+              <div class="quick-edit-row">
+                <div class="quick-edit-label">Phone Number</div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div class="quick-edit-value">+91 98765 43210</div>
+                  <button class="quick-edit-btn" onclick="showToast('Editing phone...', 'EDIT')">Edit</button>
+                </div>
+              </div>
+              <div class="quick-edit-row">
+                <div class="quick-edit-label">Primary Color</div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="width:16px;height:16px;border-radius:50%;background:var(--red)"></div>
+                    <div class="quick-edit-value">#E8232A</div>
+                  </div>
+                  <button class="quick-edit-btn" onclick="showToast('Color picker opening...', 'EDIT')">Edit</button>
+                </div>
+              </div>
+              <div class="quick-edit-row">
+                <div class="quick-edit-label">WhatsApp Link</div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div class="quick-edit-value">wa.me/9198765...</div>
+                  <button class="quick-edit-btn" onclick="showToast('Editing WhatsApp...', 'EDIT')">Edit</button>
+                </div>
+              </div>
+              <div class="quick-edit-row">
+                <div class="quick-edit-label">Template</div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div class="quick-edit-value" style="color:var(--cyan)">🚗 Dealer Premium</div>
+                  <button class="quick-edit-btn" onclick="showToast('Template change requires support ticket', 'INFO')">Change</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity Feed -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div class="dash-card-title">RECENT ACTIVITY</div>
+            </div>
+            <div class="dash-card-body">
+              <div class="activity-item">
+                <span class="activity-icon">📲</span>
+                <div class="activity-text"><strong>New installation</strong> — Customer added your app to home screen</div>
+                <div class="activity-time">2m ago</div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-icon">📞</span>
+                <div class="activity-text"><strong>Contact tap</strong> — "Book Test Drive" button was clicked</div>
+                <div class="activity-time">18m ago</div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-icon">🔗</span>
+                <div class="activity-text"><strong>Link shared</strong> — Your card was forwarded on WhatsApp</div>
+                <div class="activity-time">1h ago</div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-icon">📲</span>
+                <div class="activity-text"><strong>New installation</strong> — Customer added your app to home screen</div>
+                <div class="activity-time">3h ago</div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-icon">💬</span>
+                <div class="activity-text"><strong>WhatsApp tap</strong> — Customer initiated WhatsApp conversation</div>
+                <div class="activity-time">5h ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Subscription -->
+          <div class="dash-card" style="margin-bottom:20px">
+            <div class="dash-card-header">
+              <div class="dash-card-title">SUBSCRIPTION</div>
+            </div>
+            <div class="dash-card-body">
+              <div class="sub-plan-badge">DEALER PLAN</div>
+              <div class="sub-detail">
+                <span class="sub-detail-label">Monthly</span>
+                <span class="sub-detail-value" style="color:var(--red)">₹4,999</span>
+              </div>
+              <div class="sub-detail">
+                <span class="sub-detail-label">Next billing</span>
+                <span class="sub-detail-value">28 Mar 2026</span>
+              </div>
+              <div class="sub-detail">
+                <span class="sub-detail-label">Status</span>
+                <span class="sub-detail-value" style="color:#22ff88">● Active</span>
+              </div>
+              <div class="sub-detail">
+                <span class="sub-detail-label">Staff cards</span>
+                <span class="sub-detail-value">3 / 10 used</span>
+              </div>
+              <button class="pricing-cta pricing-cta-outline" style="margin-top:16px;border:1px solid var(--border)" onclick="showToast('Opening upgrade flow...', 'UPGRADE')">Upgrade Plan →</button>
+            </div>
+          </div>
+
+          <!-- Share card -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div class="dash-card-title">SHARE</div>
+            </div>
+            <div class="dash-card-body">
+              <div style="background:var(--surface);border-radius:8px;padding:20px;text-align:center;margin-bottom:16px">
+                <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:12px">QR CODE</div>
+                <div style="width:100px;height:100px;margin:0 auto;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:60px">▦</div>
+                <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:8px">Download QR →</div>
+              </div>
+              <button class="action-btn primary" style="width:100%;padding:12px;margin-bottom:8px" onclick="showToast('Sharing on WhatsApp...', 'SHARE')">📲 Share on WhatsApp</button>
+              <button class="action-btn" style="width:100%;padding:12px" onclick="copyUrl()">📋 Copy Link</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SUCCESS MODAL                              -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <div class="modal-title">YOU'RE LIVE!</div>
+    <div class="modal-url" id="modalUrl">yourname.cardulator.in</div>
+    <div class="modal-sub">Your Cardulator is building now. You'll receive a WhatsApp message in ~3 minutes with your live link. Share it, install it, dominate.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn-primary" onclick="goDashboard()">Go to Dashboard →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Bottom Nav (Dashboard) -->
+<div class="mobile-bottom-nav" id="mobileBottomNav" style="display:none">
+  <div class="mobile-bottom-nav-items">
+    <div class="mob-nav-item active" onclick="showToast('Overview','DASHBOARD')">
+      <span>📊</span><span>Overview</span>
+    </div>
+    <div class="mob-nav-item" onclick="showToast('Analytics coming in v2!','ANALYTICS')">
+      <span>📈</span><span>Stats</span>
+    </div>
+    <div class="mob-nav-item" onclick="showToast('Opening editor...','EDIT')">
+      <span>✏️</span><span>Edit</span>
+    </div>
+    <div class="mob-nav-item" onclick="showToast('QR generated!','QR CODE')">
+      <span>📱</span><span>QR</span>
+    </div>
+    <div class="mob-nav-item" onclick="showToast('Opening settings...','SETTINGS')">
+      <span>⚙️</span><span>More</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-title" id="toastTitle">SUCCESS</div>
+  <div class="toast-msg" id="toastMsg">Action completed.</div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────
+const state = {
+  currentPage: 'page1',
+  currentStep: 1,
+  selectedTier: 'dealer',
+  selectedTemplate: 'dealer-pro',  // 'dealer-pro' or 'dealer-slider'
+  primaryColor: '#e8232a',
+  secondaryColor: '#00e5ff',
+  subdomain: '',
+  businessName: '',
+  // Dealer Pro (index.html)
+  carImages: { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null, 7: null, 8: null, 9: null },
+  carImageURLs: {},  // object URL cache for previews
+  // Dealer Slider (index3.html)
+  sliderImageURL: null,
+  offers: [
+    { text: '🚀 XUV700: 0% DOWNPAYMENT DEAL', msg: 'Hi! I want details on the XUV700 offer.' },
+    { text: '🔥 THAR ROXX: BOOKINGS NOW OPEN', msg: 'I want to book the new THAR ROXX.' },
+    { text: '👑 SCORPIO-N: THE BIG DADDY IS HERE', msg: 'Send me the Scorpio-N price list.' }
+  ],
+  marqueeText: 'Visit us for Best Deals | Professional Calculator Hub',
+  // Shared
+  theme: 'black',
+  audio: 'blue'
+};
+
+// Theme configs matching both templates exactly
+const themeConfigs = {
+  'dealer-pro': [
+    { id: 'black', label: 'Mechanical Black', bg: '#050505', key: '#1a1a2e', acc: '#ff1f1f', txt: '#ffffff' },
+    { id: 'white', label: 'Hybrid White', bg: '#f9fafb', key: '#ffffff', acc: '#1f2937', txt: '#111' },
+    { id: 'pink', label: 'Cyber Pink', bg: '#fdf2f8', key: '#fce7f3', acc: '#be185d', txt: '#831843' }
+  ],
+  'dealer-slider': [
+    { id: 'black', label: 'Mechanical Black', bg: '#050505', key: '#1a1a2e', acc: '#00ffff' },
+    { id: 'indigo', label: 'Indigo Blue', bg: '#0a0a20', key: '#312e81', acc: '#818cf8' },
+    { id: 'white', label: 'White Hybrid', bg: '#f3f4f6', key: '#ffffff', acc: '#111827' },
+    { id: 'pink', label: 'Cyber Pink', bg: '#2d0a1a', key: '#4d1635', acc: '#ff007f' }
+  ]
+};
+
+// Audio configs matching both templates exactly
+const audioConfigs = {
+  'dealer-pro': [
+    { id: 'blue', label: 'Blue Switch (Clicky)' },
+    { id: 'brown', label: 'Brown Switch (Tactile)' },
+    { id: 'red', label: 'Red Switch (Linear)' },
+    { id: 'retro', label: 'Retro Typewriter' }
+  ],
+  'dealer-slider': [
+    { id: 'blue', label: 'Blue Switch (Clicky)' },
+    { id: 'brown', label: 'Brown Switch (Tactile)' },
+    { id: 'red', label: 'Red Switch (Linear)' }
+  ]
+};
+
+const plans = {
+  starter: { name: 'Starter', setup: 4999, monthly: 999, label: 'Starter · ₹4,999 + ₹999/mo' },
+  pro: { name: 'Professional', setup: 14999, monthly: 1999, label: 'Pro · ₹14,999 + ₹1,999/mo' },
+  dealer: { name: 'Dealer', setup: 49999, monthly: 4999, label: 'Dealer · ₹49,999 + ₹4,999/mo' },
+  whitelabel: { name: 'White Label', setup: 99999, monthly: 9999, label: 'White Label · ₹99,999 + ₹9,999/mo' }
+};
+
+// ─── NAVIGATION ──────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  state.currentPage = id;
+}
+
+function startBuild(tier) {
+  state.selectedTier = tier;
+  updateCheckoutSummary();
+  showPage('page3');
+}
+
+// ─── WIZARD ──────────────────────────────────────
+function nextStep(step) {
+  document.querySelectorAll('.wizard-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('step' + step).classList.add('active');
+
+  // Update progress circles
+  for (let i = 1; i <= 5; i++) {
+    const circle = document.getElementById('sc' + i);
+    circle.classList.remove('active', 'done');
+    if (i < step) circle.classList.add('done'), circle.innerHTML = '✓';
+    else if (i === step) circle.classList.add('active'), circle.innerHTML = i;
+    else circle.innerHTML = i;
+    if (i < 5) {
+      const line = document.getElementById('sl' + i);
+      line.classList.toggle('done', i < step);
+    }
+  }
+
+  state.currentStep = step;
+
+  // Sync summary on step 5
+  if (step === 5) {
+    const sd = document.getElementById('subdomain')?.value || 'yourname';
+    document.getElementById('summarySubdomain').textContent = (sd || 'yourname') + '.cardulator.in';
+    document.getElementById('summaryTemplate').textContent = state.selectedTemplate.charAt(0).toUpperCase() + state.selectedTemplate.slice(1);
+    document.getElementById('summaryPlan').textContent = plans[state.selectedTier]?.label || 'Starter';
+    state.subdomain = sd;
+    state.businessName = document.getElementById('businessName')?.value || 'Your Business';
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goToStep(step) {
+  if (step < state.currentStep) nextStep(step);
+}
+
+// ─── TEMPLATE SELECT: see enhanced version below in INIT ─────────────────────
+
+// ─── COLOR SELECT ────────────────────────────────
+function selectColor(type, el, hex) {
+  const container = document.getElementById(type === 'primary' ? 'primaryColors' : 'secondaryColors');
+  container.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+  if (type === 'primary') state.primaryColor = hex;
+  else state.secondaryColor = hex;
+}
+
+// ─── SUBDOMAIN CHECK ─────────────────────────────
+const takenNames = ['test', 'admin', 'app', 'demo', 'cardulator', 'support'];
+function checkSubdomain(input) {
+  const val = input.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  input.value = val;
+  const status = document.getElementById('subdomainStatus');
+  if (!val) { status.textContent = ''; return; }
+  if (takenNames.includes(val)) {
+    status.className = 'subdomain-check taken';
+    status.textContent = '✗ This subdomain is taken. Try another.';
+  } else if (val.length < 3) {
+    status.className = 'subdomain-check taken';
+    status.textContent = '✗ Minimum 3 characters required';
+  } else {
+    status.className = 'subdomain-check avail';
+    status.textContent = `✓ "${val}.cardulator.in" is available!`;
+    document.getElementById('checkoutUrl').textContent = val + '.cardulator.in';
+    document.getElementById('modalUrl').textContent = val + '.cardulator.in';
+  }
+}
+
+// ─── LOGO UPLOAD ─────────────────────────────────
+function triggerLogoUpload() {
+  document.getElementById('logoFile').click();
+}
+function previewLogo(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('logoImg').src = e.target.result;
+      document.getElementById('logoPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// ─── TOGGLE FEATURES ─────────────────────────────
+function toggleFeature(item) {
+  const sw = item.querySelector('.toggle-switch');
+  sw.classList.toggle('on');
+}
+
+// ─── CHECKOUT ────────────────────────────────────
+function goToCheckout() {
+  updateCheckoutSummary();
+  const bname = document.getElementById('businessName')?.value || 'Your Business';
+  document.getElementById('previewBrand').textContent = bname.toUpperCase();
+  const sd = document.getElementById('subdomain')?.value;
+  if (sd) {
+    document.getElementById('checkoutUrl').textContent = sd + '.cardulator.in';
+    document.getElementById('modalUrl').textContent = sd + '.cardulator.in';
+  }
+  // Update preview for dealer-pro: show uploaded car images
+  updatePreviewKeys();
+  // Show template badge in preview
+  const tplBadge = document.getElementById('previewTemplateBadge');
+  if (tplBadge) {
+    if (state.selectedTemplate === 'dealer-pro') {
+      tplBadge.textContent = '🚗 DEALER PRO · PNG KEYS';
+      tplBadge.style.color = 'var(--cyan)';
+    } else if (state.selectedTemplate === 'dealer-slider') {
+      tplBadge.textContent = '🎠 DEALER SLIDER · ROTATING OFFERS';
+      tplBadge.style.color = 'var(--red)';
+    }
+  }
+  showPage('page4');
+}
+
+function updateCheckoutSummary() {
+  const plan = plans[state.selectedTier] || plans.dealer;
+  document.getElementById('orderPlanName').textContent = plan.name + ' Setup';
+  document.getElementById('orderSetupPrice').textContent = '₹' + plan.setup.toLocaleString('en-IN');
+  document.getElementById('orderMonthlyName').textContent = plan.name + ' Monthly';
+  document.getElementById('orderMonthlyPrice').textContent = '₹' + plan.monthly.toLocaleString('en-IN');
+  document.getElementById('orderTotal').textContent = '₹' + (plan.setup + plan.monthly).toLocaleString('en-IN');
+  document.getElementById('orderMonthlyNote').textContent = 'Then ₹' + plan.monthly.toLocaleString('en-IN') + '/month · Cancel anytime';
+}
+
+function applyCoupon() {
+  const code = document.getElementById('couponInput').value.toUpperCase();
+  if (code === 'LAUNCH50') showToast('50% off setup fee applied!', '🎉 COUPON APPLIED');
+  else showToast('Invalid or expired coupon code', 'COUPON ERROR');
+}
+
+function copyUrl() {
+  const url = document.getElementById('checkoutUrl')?.textContent || 'starindiaagencies.cardulator.in';
+  showToast('Link copied: ' + url, '📋 COPIED');
+}
+
+// ─── PAYMENT ─────────────────────────────────────
+function processPayment() {
+  const btn = document.querySelector('.pay-btn');
+  btn.innerHTML = '⏳ PROCESSING...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.innerHTML = '🔒 PAY WITH RAZORPAY';
+    btn.disabled = false;
+    document.getElementById('successModal').classList.add('open');
+  }, 2200);
+}
+
+function closeModal() {
+  document.getElementById('successModal').classList.remove('open');
+}
+
+function goDashboard() {
+  closeModal();
+  showPage('page5');
+}
+
+// ─── TOAST ───────────────────────────────────────
+let toastTimer;
+function showToast(msg, title = 'DONE') {
+  clearTimeout(toastTimer);
+  const toast = document.getElementById('toast');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastMsg').textContent = msg;
+  toast.classList.add('show');
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+// ─── HAMBURGER MENU ──────────────────────────────
+function toggleNav() {
+  const btn = document.getElementById('hamburger');
+  const drawer = document.getElementById('navDrawer');
+  btn.classList.toggle('open');
+  drawer.classList.toggle('open');
+}
+
+function navTo(page) {
+  // Close drawer then navigate
+  document.getElementById('hamburger').classList.remove('open');
+  document.getElementById('navDrawer').classList.remove('open');
+  showPage(page);
+}
+
+// ─── MOBILE BOTTOM NAV ───────────────────────────
+function updateMobileNav() {
+  const bottomNav = document.getElementById('mobileBottomNav');
+  if (state.currentPage === 'page5') {
+    bottomNav.style.display = 'block';
+  } else {
+    bottomNav.style.display = 'none';
+  }
+}
+
+// ─── PATCH showPage to update bottom nav ─────────
+const _origShowPage = showPage;
+// Override showPage to also handle mobile nav
+window.showPage = function(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  state.currentPage = id;
+  // Close hamburger if open
+  document.getElementById('hamburger').classList.remove('open');
+  document.getElementById('navDrawer').classList.remove('open');
+  // Show/hide bottom nav
+  updateMobileNav();
+};
+
+// ─── TEMPLATE SELECT (enhanced) ────────────────
+function selectTemplate(el, name) {
+  document.querySelectorAll('.template-option').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  state.selectedTemplate = name;
+
+  // Show correct description box
+  ['dealer-pro','dealer-slider','realestate','medical','standard'].forEach(id => {
+    const el2 = document.getElementById('tplDesc-' + id);
+    if (el2) el2.style.display = (id === name) ? 'block' : 'none';
+  });
+
+  // Re-render theme/audio options when user goes to step 3
+  renderThemeAudioOptions();
+  updateStep3Sections();
+}
+
+// ─── STEP 3 SECTION SWITCHER ─────────────────────
+function updateStep3Sections() {
+  const t = state.selectedTemplate;
+  const proSection = document.getElementById('section-dealer-pro');
+  const sliderSection = document.getElementById('section-dealer-slider');
+  if (proSection) proSection.style.display = (t === 'dealer-pro') ? 'block' : 'none';
+  if (sliderSection) sliderSection.style.display = (t === 'dealer-slider') ? 'block' : 'none';
+
+  // Step 4 notes
+  const n1 = document.getElementById('step4-dealer-pro-note');
+  const n2 = document.getElementById('step4-dealer-slider-note');
+  if (n1) n1.style.display = (t === 'dealer-pro') ? 'block' : 'none';
+  if (n2) n2.style.display = (t === 'dealer-slider') ? 'block' : 'none';
+}
+
+// ─── RENDER THEME & AUDIO BUTTONS ────────────────
+function renderThemeAudioOptions() {
+  const t = state.selectedTemplate;
+  const themes = themeConfigs[t] || themeConfigs['dealer-pro'];
+  const audios = audioConfigs[t] || audioConfigs['dealer-pro'];
+
+  // Themes
+  const tDiv = document.getElementById('themeOptions');
+  if (tDiv) {
+    tDiv.innerHTML = '';
+    themes.forEach(th => {
+      const btn = document.createElement('button');
+      btn.style.cssText = `background:${th.bg};border:2px solid ${state.theme===th.id?'#fff':'rgba(255,255,255,0.15)'};border-radius:6px;padding:8px 14px;color:${th.txt||'#fff'};font-family:var(--font-mono);font-size:10px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s`;
+      btn.textContent = th.label;
+      if (state.theme === th.id) btn.style.borderColor = '#fff';
+      btn.onclick = () => { state.theme = th.id; renderThemeAudioOptions(); };
+      tDiv.appendChild(btn);
+    });
+  }
+
+  // Audio
+  const aDiv = document.getElementById('audioOptions');
+  if (aDiv) {
+    aDiv.innerHTML = '';
+    audios.forEach(au => {
+      const btn = document.createElement('button');
+      btn.style.cssText = `background:var(--card);border:2px solid ${state.audio===au.id?'var(--red)':'var(--border)'};border-radius:6px;padding:8px 14px;color:${state.audio===au.id?'var(--white)':'var(--muted)'};font-family:var(--font-mono);font-size:10px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s`;
+      btn.textContent = au.label;
+      btn.onclick = () => { state.audio = au.id; renderThemeAudioOptions(); };
+      aDiv.appendChild(btn);
+    });
+  }
+}
+
+// ─── CAR KEY IMAGE UPLOADS (Dealer Pro) ──────────
+const carKeyLabels = ['Thar','3XO','BE 6e','XEV 9e','XUV400','XUV700','Scorpio','Bolero','Bolero Neo'];
+
+function renderCarKeyGrid() {
+  const grid = document.getElementById('carKeyGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i = 1; i <= 9; i++) {
+    const slot = document.createElement('div');
+    slot.style.cssText = 'background:var(--card);border:2px dashed var(--border);border-radius:8px;padding:16px 12px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;';
+    slot.id = 'keySlot' + i;
+    const preview = state.carImageURLs[i];
+    slot.innerHTML = preview
+      ? `<img src="${preview}" style="max-height:48px;max-width:100%;object-fit:contain;margin-bottom:6px;display:block;margin-left:auto;margin-right:auto"><div style="font-family:var(--font-mono);font-size:9px;color:var(--cyan);letter-spacing:1px">KEY ${i} ✓</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--muted)">${carKeyLabels[i-1]}</div>`
+      : `<div style="font-size:24px;margin-bottom:6px">${i}</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:4px">KEY ${i}</div><div style="font-family:var(--font-mono);font-size:8px;color:rgba(240,240,248,0.25)">${carKeyLabels[i-1]}</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--red);margin-top:4px">TAP TO UPLOAD</div>`;
+    slot.onclick = () => triggerCarKeyUpload(i);
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/png,image/jpeg,image/webp';
+    inp.style.display = 'none'; inp.id = 'carKeyFile' + i;
+    inp.onchange = (e) => handleCarKeyUpload(e, i);
+    slot.appendChild(inp);
+    grid.appendChild(slot);
+  }
+}
+
+function triggerCarKeyUpload(num) {
+  document.getElementById('carKeyFile' + num).click();
+}
+
+function handleCarKeyUpload(event, num) {
+  const file = event.target.files[0];
+  if (!file) return;
+  state.carImages[num] = file;
+  const url = URL.createObjectURL(file);
+  state.carImageURLs[num] = url;
+  renderCarKeyGrid(); // re-render slot with preview
+  updatePreviewKeys();
+  showToast('Key ' + num + ' image uploaded!', '📸 CAR IMAGE');
+}
+
+// ─── SLIDER IMAGE UPLOAD (Dealer Slider) ─────────
+function triggerSliderUpload() {
+  document.getElementById('sliderFile').click();
+}
+
+function previewSlider(input) {
+  if (!input.files || !input.files[0]) return;
+  const url = URL.createObjectURL(input.files[0]);
+  state.sliderImageURL = url;
+  const img = document.getElementById('sliderImg');
+  if (img) { img.src = url; document.getElementById('sliderPreview').style.display = 'block'; }
+  showToast('Banner image uploaded!', '🖼 SLIDER IMAGE');
+}
+
+// ─── LIVE PREVIEW UPDATES ─────────────────────────
+function liveUpdatePreview() {
+  const name = document.getElementById('businessName')?.value;
+  if (name) {
+    const pb = document.getElementById('previewBrand');
+    if (pb) pb.textContent = name.toUpperCase();
+  }
+}
+
+function updatePreviewKeys() {
+  // Update checkout preview keys with uploaded car images
+  for (let i = 1; i <= 9; i++) {
+    const url = state.carImageURLs[i];
+    const keyEl = document.getElementById('previewKey' + i);
+    if (keyEl && url) {
+      keyEl.innerHTML = `<img src="${url}" style="width:20px;height:12px;object-fit:contain;margin-bottom:1px"><br>${i}`;
+    }
+  }
+}
+
+// ─── GENERATE OUTPUT FILE ─────────────────────────
+// This function assembles the final customized template file
+// with all user data injected, ready for download/deployment
+function generateOutputFile() {
+  const biz = document.getElementById('businessName')?.value || 'Your Business';
+  const phone = document.getElementById('phone')?.value || '0000000000';
+  const svcPhone = document.getElementById('servicePhone')?.value || phone;
+  const wa = document.getElementById('whatsapp')?.value || '910000000000';
+  const waClean = wa.replace(/[^0-9]/g, '');
+  const sub = document.getElementById('subdomain')?.value || 'myapp';
+  const ig = document.getElementById('instagram')?.value || '';
+  const fb = document.getElementById('facebook')?.value || '';
+  const site = document.getElementById('website')?.value || '';
+
+  if (state.selectedTemplate === 'dealer-pro') {
+    return generateDealerPro(biz, phone, svcPhone, waClean, ig, fb, site);
+  } else if (state.selectedTemplate === 'dealer-slider') {
+    return generateDealerSlider(biz, phone, svcPhone, waClean, sub);
+  }
+  return null;
+}
+
+// ─── GENERATE DEALER PRO (index.html) ────────────
+function generateDealerPro(biz, phone, svcPhone, wa, ig, fb, site) {
+  // Build carIcons object using data URLs from uploaded files
+  const icons = {};
+  for (let i = 1; i <= 9; i++) {
+    icons[i] = state.carImageURLs[i] || '';
+  }
+  const themeConf = themeConfigs['dealer-pro'].find(t => t.id === state.theme) || themeConfigs['dealer-pro'][0];
+  const audio = state.audio;
+
+  const socialLinks = [
+    fb ? `<a href="${fb}" target="_blank" class="social-link"><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" class="w-5 h-5 invert"></a>` : '',
+    ig ? `<a href="${ig}" target="_blank" class="social-link"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" class="w-5 h-5 invert"></a>` : '',
+    site ? `<a href="${site}" target="_blank" class="social-link"><img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" class="w-5 h-5 invert"></a>` : ''
+  ].filter(Boolean).join('\n                ');
+
+  const carIconsJS = Object.entries(icons).map(([k,v]) => `            '${k}': '${v}'`).join(',\n');
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="icons/cardulatorlogoinstally.png">
+<link rel="apple-touch-icon" href="icons/cardulatorlogoinstally.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e11d48">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(() => console.log("Service Worker Registered"));
+  }
+<\/script>
+<script src="https://cdn.tailwindcss.com/3.4.1" defer><\/script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${biz} | Cardulator App</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+    :root { --bg: ${themeConf.bg}; --key: ${themeConf.key}; --acc: ${themeConf.acc}; --txt: ${themeConf.txt||'#ffffff'}; }
+    body { background-color: #000; font-family: 'Rajdhani', sans-serif; color: var(--txt); display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; overflow: hidden; }
+    .rgb-frame { padding: 4px; border-radius: 2.6rem; background: #111; transition: 0.5s; }
+    .rgb-active { background: linear-gradient(var(--angle), #ff0000, #333, #ff0000, #111); animation: rotate 4s linear infinite; }
+    @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+    @keyframes rotate { to { --angle: 360deg; } }
+    .calculator-body { width: 360px; height: 780px; background: var(--bg); border-radius: 2.5rem; padding: 1.2rem; display: flex; flex-direction: column; border: 1px solid #333; position: relative; }
+    .display-container { background: #000; height: 110px; border-radius: 1.5rem; margin-bottom: 1rem; display: flex; flex-direction: column; justify-content: flex-end; padding: 1rem; text-align: right; border: 1px solid #444; overflow: hidden; box-shadow: inset 0 0 10px rgba(255,0,0,0.2); }
+    #res { font-size: 2rem; font-weight: bold; font-family: 'Orbitron'; white-space: nowrap; overflow-x: auto; scrollbar-width: none; color: #fff; width: 100%; }
+    #res::-webkit-scrollbar { display: none; }
+    .key-rgb { animation: key-glow 3s infinite alternate; }
+    @keyframes key-glow { 0% { box-shadow: inset 0 0 5px rgba(255,0,0,0.4); } 50% { box-shadow: inset 0 0 12px rgba(0,255,255,0.3); } 100% { box-shadow: inset 0 0 5px rgba(255,0,255,0.4); } }
+    .key { background: var(--key); color: var(--acc); border-radius: 1rem; height: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: 0.1s; border-bottom: 3px solid rgba(0,0,0,0.5); }
+    .key:active { transform: scale(0.95); border-bottom: 0px; }
+    .key-digit { font-size: 1.6rem; font-weight: 800; font-family: 'Orbitron'; z-index: 2; }
+    .car-icon { width: 48px; height: 28px; object-fit: contain; margin-bottom: 1px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); z-index: 1; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+    .modal.active { display: flex; }
+    .cfg-card { border: 2px solid #444; padding: 2rem; border-radius: 2.5rem; width: 320px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,1); }
+    .contact-btn { background: linear-gradient(90deg, #e11d48, #9f1239); color: white; font-weight: bold; border-radius: 0.8rem; padding: 12px; text-align: center; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.8rem; text-decoration: none; width: 100%; }
+    .social-link { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #111; border: 1px solid #333; }
+<\/style>
+<\/head>
+<body>
+<div id="mainFrame" class="rgb-frame rgb-active">
+    <div class="calculator-body">
+        <div class="mb-4">
+            <span class="text-[11px] font-bold text-red-500 block mb-2 tracking-widest">${biz.toUpperCase()}</span>
+            <div class="flex gap-2">
+                <button onclick="toggleModal('themeModal')" class="flex-1 bg-gray-900 text-[9px] py-1.5 rounded-lg border border-gray-700 font-bold uppercase">⚙️ Settings</button>
+                <button onclick="toggleModal('contactModal')" class="flex-1 bg-red-950 text-[9px] py-1.5 rounded-lg border border-red-600 font-bold uppercase">📞 Contact</button>
+            </div>
+        </div>
+        <div class="display-container"><div id="res">0</div></div>
+        <div id="key-grid" class="grid grid-cols-4 gap-2"></div>
+    </div>
+</div>
+
+<div id="themeModal" class="modal">
+    <div class="cfg-card bg-[#0f0f1a]">
+        <h2 class="text-xl font-bold text-red-500 mb-6 font-['Orbitron']">SYSTEM CFG</h2>
+        <div class="space-y-4 text-left">
+            <div>
+                <label class="text-[10px] text-gray-400 uppercase">Visual Theme</label>
+                <select id="themeSelect" onchange="updateSettings()" class="w-full bg-black border border-gray-700 p-2 rounded text-xs text-white">
+                    <option value="black">Mechanical Black</option>
+                    <option value="white">Hybrid White</option>
+                    <option value="pink">Cyber Pink</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] text-gray-400 uppercase">Mechanical Switches</label>
+                <select id="audioSelect" onchange="updateSettings()" class="w-full bg-black border border-gray-700 p-2 rounded text-xs text-white">
+                    <option value="blue">Blue Switch (Clicky)</option>
+                    <option value="brown">Brown Switch (Tactile)</option>
+                    <option value="red">Red Switch (Linear)</option>
+                    <option value="retro">Retro Typewriter</option>
+                </select>
+            </div>
+            <button onclick="toggleRGB()" id="rgbBtn" class="w-full bg-green-900/30 text-green-400 p-2 rounded border border-green-700 text-xs font-bold uppercase">RGB Frame: ON</button>
+        </div>
+        <button onclick="toggleModal('themeModal')" class="w-full bg-red-600 text-white font-bold py-3 rounded-xl mt-6">SAVE & EXIT</button>
+        <a href="https://cardulator.in" target="_blank" style="font-size:10px;color:#555;text-decoration:none;display:block;margin-top:15px">Powered by <span style="color:#00ffff;text-decoration:underline">Cardulator.in</span></a>
+    </div>
+</div>
+
+<div id="contactModal" class="modal">
+    <div class="cfg-card bg-[#0f0f1a] border-red-600">
+        <h2 class="text-lg font-bold text-red-500 mb-4 font-['Orbitron']">${biz.toUpperCase()}</h2>
+        <div class="space-y-2 mb-4">
+            <a href="tel:${phone}" class="contact-btn">🚗 BOOK NEW CAR</a>
+            <a href="tel:${phone}" class="contact-btn">🔑 BOOK TEST DRIVE</a>
+            <a href="tel:${svcPhone}" class="contact-btn !bg-indigo-800">🛠️ BOOK A SERVICE</a>
+            <a href="https://wa.me/${wa}" class="contact-btn !bg-green-600">💬 WHATSAPP US</a>
+        </div>
+        <div class="flex justify-center gap-4 mt-4 border-t border-gray-800 pt-4">
+            ${socialLinks}
+        </div>
+        <button onclick="toggleModal('contactModal')" class="mt-4 text-gray-500 text-[10px] uppercase">Close</button>
+    </div>
+</div>
+
+<script>
+    const carIcons = {
+${carIconsJS}
+    };
+    const defaultAudio = '${audio}';
+    const defaultTheme = '${themeConf.id}';
+    const keys = ['C', '÷', '×', '⌫', '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '=', '0', '.', 'LOG'];
+    let expr = "0", audioCtx = null;
+
+    function updateSettings() {
+        const theme = document.getElementById('themeSelect').value;
+        const audio = document.getElementById('audioSelect').value;
+        const rgb = document.getElementById('mainFrame').classList.contains('rgb-active');
+        localStorage.setItem('mahindraCfg', JSON.stringify({ theme, audio, rgb }));
+        applyTheme(theme);
+    }
+    function applyTheme(t) {
+        const themes = {
+            black: { bg: '#050505', key: '#1a1a2e', acc: '#ff1f1f', txt: '#fff' },
+            white: { bg: '#f9fafb', key: '#ffffff', acc: '#1f2937', txt: '#111' },
+            pink: { bg: '#fdf2f8', key: '#fce7f3', acc: '#be185d', txt: '#831843' }
+        };
+        const s = themes[t] || themes.black;
+        document.documentElement.style.setProperty('--bg', s.bg);
+        document.documentElement.style.setProperty('--key', s.key);
+        document.documentElement.style.setProperty('--acc', s.acc);
+        document.documentElement.style.setProperty('--txt', s.txt);
+    }
+    function toggleRGB() {
+        const frame = document.getElementById('mainFrame');
+        frame.classList.toggle('rgb-active');
+        document.getElementById('rgbBtn').innerText = frame.classList.contains('rgb-active') ? "RGB Frame: ON" : "RGB Frame: OFF";
+        updateSettings();
+    }
+    function playSound() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const cfg = JSON.parse(localStorage.getItem('mahindraCfg') || '{}');
+        const type = cfg.audio || defaultAudio;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        if (type === 'blue') { osc.type = 'square'; osc.frequency.setValueAtTime(180, audioCtx.currentTime); }
+        else if (type === 'brown') { osc.type = 'triangle'; osc.frequency.setValueAtTime(140, audioCtx.currentTime); }
+        else if (type === 'red') { osc.type = 'sine'; osc.frequency.setValueAtTime(120, audioCtx.currentTime); }
+        else { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(80, audioCtx.currentTime); }
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    }
+    function renderKeys() {
+        const grid = document.getElementById('key-grid');
+        grid.innerHTML = "";
+        keys.forEach(k => {
+            const isDigit = /[1-9]/.test(k);
+            const btn = document.createElement('button');
+            btn.className = 'key ' + (k === '0' ? 'col-span-2 ' : '') + (isDigit ? 'key-rgb' : '');
+            let content = (carIcons[k] && carIcons[k] !== '')
+                ? '<img src="' + carIcons[k] + '" class="car-icon"><span class="key-digit">' + k + '</span>'
+                : '<span class="key-digit">' + (k === 'LOG' ? 'LOG<br>HIST' : k) + '</span>';
+            btn.innerHTML = content;
+            btn.onclick = () => {
+                playSound();
+                if (k === 'C') expr = "0";
+                else if (k === 'LOG') { const h = JSON.parse(localStorage.getItem('calc_history_list') || '[]'); alert(h.length ? 'Last 10:\n' + h.join('\n') : 'No history.'); return; }
+                else if (k === '⌫') expr = expr.length > 1 ? expr.slice(0, -1) : "0";
+                else if (k === '=') { try { const r = eval(expr.replace('×','*').replace('÷','/')).toString(); const h = JSON.parse(localStorage.getItem('calc_history_list') || '[]'); h.unshift(expr + ' = ' + r); localStorage.setItem('calc_history_list', JSON.stringify(h.slice(0,10))); expr = r; } catch { expr = "Error"; } }
+                else expr = (expr === "0") ? k : expr + k;
+                const res = document.getElementById('res'); res.innerText = expr; res.scrollLeft = res.scrollWidth;
+            };
+            grid.appendChild(btn);
+        });
+    }
+    function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
+    function load() {
+        const cfg = JSON.parse(localStorage.getItem('mahindraCfg')) || { theme: defaultTheme, audio: defaultAudio, rgb: true };
+        document.getElementById('themeSelect').value = cfg.theme;
+        document.getElementById('audioSelect').value = cfg.audio;
+        if (!cfg.rgb) document.getElementById('mainFrame').classList.remove('rgb-active');
+        applyTheme(cfg.theme);
+        renderKeys();
+    }
+    window.onload = load;
+    document.addEventListener('keydown', (e) => {
+        const k = e.key;
+        if (!isNaN(k) || k === '.') renderKeyAction(k);
+        if (k === '+') renderKeyAction('+'); if (k === '-') renderKeyAction('-');
+        if (k === '*') renderKeyAction('×'); if (k === '/') renderKeyAction('÷');
+        if (k === 'Enter') { e.preventDefault(); renderKeyAction('='); }
+        if (k === 'Backspace') renderKeyAction('⌫'); if (k === 'Escape') renderKeyAction('C');
+    });
+    function renderKeyAction(k) { document.querySelectorAll('.key').forEach(b => { if (b.querySelector('.key-digit')?.textContent === k || b.innerText.trim() === k) { b.click(); } }); }
+<\/script>
+<\/body>
+<\/html>`;
+}
+
+// ─── GENERATE DEALER SLIDER (index3.html) ────────
+function generateDealerSlider(biz, phone, svcPhone, wa, sub) {
+  const o1t = document.getElementById('offer1text')?.value || '🚀 XUV700: 0% DOWNPAYMENT DEAL';
+  const o1m = document.getElementById('offer1msg')?.value || 'Hi! I want details on the XUV700 offer.';
+  const o2t = document.getElementById('offer2text')?.value || '🔥 THAR ROXX: BOOKINGS NOW OPEN';
+  const o2m = document.getElementById('offer2msg')?.value || 'I want to book the new THAR ROXX.';
+  const o3t = document.getElementById('offer3text')?.value || '👑 SCORPIO-N: THE BIG DADDY IS HERE';
+  const o3m = document.getElementById('offer3msg')?.value || 'Send me the Scorpio-N price list.';
+  const marquee = document.getElementById('marqueeText')?.value || `Visit ${biz} for Best Deals | Professional Calculator Hub`;
+  const sliderSrc = state.sliderImageURL || 'icons/range_of_cars.png';
+  const themeConf = themeConfigs['dealer-slider'].find(t => t.id === state.theme) || themeConfigs['dealer-slider'][0];
+  const audio = state.audio;
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="icons/cardulatorlogoinstally.png">
+    <link rel="apple-touch-icon" href="icons/cardulatorlogoinstally.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e11d48">
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').then(() => console.log("Service Worker Registered"));
+      }
+    <\/script>
+    <script src="https://cdn.tailwindcss.com/3.4.1" defer><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>${biz} | Cardulator App</title>
+    <style>
+        :root { --main-bg: ${themeConf.bg}; --key-bg: ${themeConf.key}; --accent: ${themeConf.acc}; --angle: 0deg; }
+        body { background-color: #000; font-family: 'Rajdhani', sans-serif; color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .rgb-frame { padding: 4px; border-radius: 2.6rem; transition: all 0.5s; background: #111; }
+        .rgb-active { background: linear-gradient(var(--angle), #ff0000, #000, #ff0000, #000, #ff0000) !important; animation: rotate 3s linear infinite; }
+        @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        @keyframes rotate { to { --angle: 360deg; } }
+        .calculator-body { width: 350px; height: 780px; background: var(--main-bg); border-radius: 2.5rem; padding: 1.5rem; display: flex; flex-direction: column; position: relative; z-index: 10; }
+        .display { background: #000; height: 110px; border-radius: 1.5rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; justify-content: center; padding: 1.5rem; text-align: right; border: 1px solid #222; overflow: hidden; }
+        .key { background: var(--key-bg); color: var(--accent); font-weight: bold; border-radius: 0.8rem; height: 60px; transition: all 0.1s; cursor: pointer; font-size: 1.2rem; position: relative; border: 2px solid transparent; background-clip: padding-box; }
+        .key::after { content: ''; position: absolute; inset: -2px; border-radius: 0.8rem; background: linear-gradient(var(--angle), var(--accent), transparent, var(--accent)); z-index: -1; animation: rotate 4s linear infinite; opacity: 0.3; }
+        .key:active { transform: translateY(3px); filter: brightness(1.5); box-shadow: 0 0 15px var(--accent); }
+        .history-key { font-size: 0.7rem !important; line-height: 1; color: #4ade80; }
+        .live-dot { height: 8px; width: 8px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; position: relative; }
+        .live-dot::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background-color: #22c55e; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(3); opacity: 0; } }
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .animate-marquee { display: inline-block; animation: marquee 12s linear infinite; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .modal.active { display: flex; }
+        .contact-btn { background: linear-gradient(90deg, #e11d48, #9f1239); color: white; font-weight: bold; border-radius: 0.8rem; padding: 12px; font-size: 0.8rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; text-decoration: none; }
+    <\/style>
+<\/head>
+<body>
+    <div id="mainFrame" class="rgb-frame rgb-active">
+        <div class="calculator-body">
+            <div class="mb-4">
+                <span class="text-[10px] font-bold text-red-500 block mb-2 tracking-widest uppercase text-center">${biz}</span>
+                <div class="flex gap-2">
+                    <button onclick="toggleModal('themeModal')" class="flex-1 bg-gray-900 text-[9px] py-2 rounded-lg border border-gray-700 font-bold uppercase">⚙️ Settings</button>
+                    <button onclick="toggleModal('contactModal')" class="flex-1 bg-red-950 text-[9px] py-2 rounded-lg border border-red-600 font-bold uppercase">📞 Contact</button>
+                </div>
+            </div>
+            <div class="display">
+                <div id="res" class="text-cyan-400 text-3xl font-bold font-['Orbitron']">0</div>
+            </div>
+            <div class="grid grid-cols-4 gap-2 mb-2" id="key-grid"></div>
+            <a id="whatsappOfferLink" href="https://wa.me/${wa}" target="_blank" class="block">
+                <div class="mt-2 overflow-hidden bg-black/40 rounded-xl border border-gray-800 p-2 relative cursor-pointer active:scale-95 transition-transform">
+                    <div class="relative h-[140px] flex items-center justify-center overflow-hidden">
+                        <img id="sliderImage" src="${sliderSrc}" class="w-full h-auto max-h-[120px] object-contain transition-all duration-500 transform">
+                    </div>
+                    <div class="mt-2 bg-red-950/30 border-t border-red-900/50 py-1.5 overflow-hidden flex items-center">
+                        <div class="flex items-center bg-black/60 px-2 py-0.5 rounded-full border border-green-900/50 mr-2 z-10">
+                            <span class="live-dot"></span>
+                            <span class="text-[7px] text-green-400 font-bold uppercase">Live</span>
+                        </div>
+                        <div id="offerText" class="whitespace-nowrap animate-marquee text-[10px] font-bold text-red-400 tracking-widest uppercase">
+                            🚀 LOADING LATEST OFFERS...
+                        </div>
+                    </div>
+                </div>
+            </a>
+            <div class="mt-4 bg-black border border-gray-800 p-1 rounded overflow-hidden">
+                <div class="whitespace-nowrap animate-marquee text-[10px] text-gray-500 uppercase">
+                    ${marquee}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="themeModal" class="modal">
+        <div class="bg-[#0f0f1a] border-2 border-cyan-900 rounded-[2rem] p-8 w-80 text-center">
+            <h2 class="text-xl font-bold text-cyan-400 mb-6 font-['Orbitron']">SYSTEM CFG</h2>
+            <div class="space-y-4 text-left">
+                <button id="rgbToggle" onclick="toggleRGB()" class="w-full bg-green-900/30 text-green-400 p-2 rounded border border-green-700 text-xs font-bold uppercase">RGB FRAME: ON</button>
+                <select id="themeSelect" onchange="applyChanges()" class="w-full bg-black border border-gray-700 p-2 rounded text-xs text-white">
+                    <option value="black">Mechanical Black</option>
+                    <option value="indigo">Indigo Blue</option>
+                    <option value="white">White Hybrid</option>
+                    <option value="pink">Cyber Pink</option>
+                </select>
+                <select id="soundSelect" onchange="saveSettings()" class="w-full bg-black border border-gray-700 p-2 rounded text-xs text-white">
+                    <option value="blue">Blue Switch (Clicky)</option>
+                    <option value="brown">Brown Switch (Tactile)</option>
+                    <option value="red">Red Switch (Linear)</option>
+                </select>
+            </div>
+            <button onclick="toggleModal('themeModal')" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl mt-6">SAVE & CLOSE</button>
+            <a href="https://cardulator.in" target="_blank" style="font-size:10px;color:#555;text-decoration:none;display:block;margin-top:12px">Powered by <span style="color:#00ffff;text-decoration:underline">Cardulator.in</span></a>
+        </div>
+    </div>
+
+    <div id="contactModal" class="modal">
+        <div class="bg-[#0f0f1a] border-2 border-red-600 rounded-[2rem] p-8 w-80 text-center">
+            <h2 class="text-lg font-bold text-red-500 mb-4 font-['Orbitron']">CONTACT US</h2>
+            <div class="space-y-2">
+                <a href="tel:${phone}" class="contact-btn">🚗 BOOK NEW CAR</a>
+                <a href="tel:${svcPhone}" class="contact-btn !bg-indigo-800">🛠️ SERVICE BOOKING</a>
+                <a href="https://wa.me/${wa}" class="contact-btn !bg-green-600">💬 WHATSAPP US</a>
+            </div>
+            <button onclick="toggleModal('contactModal')" class="mt-6 text-gray-500 text-[10px] uppercase">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const carImages = [
+            { src: '${sliderSrc}', offer: '${o1t}', msg: '${o1m}' },
+            { src: '${sliderSrc}', offer: '${o2t}', msg: '${o2m}' },
+            { src: '${sliderSrc}', offer: '${o3t}', msg: '${o3m}' }
+        ];
+        let expr = "", audioCtx = null, rgbOn = true, currentIndex = 0;
+        const keys = ['C', '÷', '×', '⌫', '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '=', '0', '.', 'LOG'];
+        window.onload = () => { renderKeys(); loadSettings(); setInterval(rotateSlider, 4000); };
+        function saveSettings() {
+            const cfg = { rgb: rgbOn, theme: document.getElementById('themeSelect').value, sound: document.getElementById('soundSelect').value };
+            localStorage.setItem('cardulator_cfg', JSON.stringify(cfg));
+        }
+        function loadSettings() {
+            const saved = localStorage.getItem('cardulator_cfg');
+            if (saved) {
+                const cfg = JSON.parse(saved);
+                rgbOn = cfg.rgb;
+                document.getElementById('themeSelect').value = cfg.theme;
+                document.getElementById('soundSelect').value = cfg.sound;
+                if (!rgbOn) document.getElementById('mainFrame').classList.remove('rgb-active');
+                applyChanges();
+            }
+        }
+        function renderKeys() {
+            const grid = document.getElementById('key-grid'); grid.innerHTML = "";
+            keys.forEach(k => {
+                const btn = document.createElement('button');
+                btn.className = 'key ' + (k === '0' ? 'col-span-2' : '') + (k === 'LOG' ? ' history-key' : '');
+                btn.innerText = k === 'LOG' ? 'LOG\nHISTORY' : k;
+                btn.onclick = () => triggerAction(k);
+                grid.appendChild(btn);
+            });
+        }
+        function triggerAction(k) {
+            playSound();
+            const res = document.getElementById('res');
+            if (k === 'LOG') { const h = JSON.parse(localStorage.getItem('calc_history_list') || '[]'); alert(h.length ? 'Last 10:\n' + h.join('\n') : 'No history.'); return; }
+            if (k === 'C') expr = "";
+            else if (k === '⌫') expr = expr.slice(0, -1);
+            else if (k === '=') {
+                try { const r = eval(expr.replace(/×/g,'*').replace(/÷/g,'/')).toString(); const h = JSON.parse(localStorage.getItem('calc_history_list') || '[]'); h.unshift(expr + ' = ' + r); localStorage.setItem('calc_history_list', JSON.stringify(h.slice(0,10))); expr = r; } catch { expr = "Error"; }
+            } else { if(expr==="Error") expr=""; expr += k; }
+            res.innerText = expr || "0";
+        }
+        function rotateSlider() {
+            const img = document.getElementById('sliderImage');
+            const txt = document.getElementById('offerText');
+            const link = document.getElementById('whatsappOfferLink');
+            img.style.opacity = "0"; img.style.transform = "translateX(-20px)";
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % carImages.length;
+                const data = carImages[currentIndex];
+                img.src = data.src; txt.innerText = data.offer + " — CLICK TO INQUIRE —";
+                link.href = 'https://wa.me/${wa}?text=' + encodeURIComponent(data.msg);
+                img.style.transform = "translateX(20px)";
+                setTimeout(() => { img.style.opacity = "1"; img.style.transform = "translateX(0)"; }, 50);
+            }, 500);
+        }
+        function playSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const type = document.getElementById('soundSelect').value;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = type === 'blue' ? 'square' : type === 'brown' ? 'triangle' : 'sine';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+        function toggleRGB() {
+            rgbOn = !rgbOn;
+            document.getElementById('mainFrame').classList.toggle('rgb-active');
+            document.getElementById('rgbToggle').innerText = rgbOn ? "RGB FRAME: ON" : "RGB FRAME: OFF";
+            saveSettings();
+        }
+        function applyChanges() {
+            const theme = document.getElementById('themeSelect').value;
+            const themes = { black: { main: '#050505', key: '#1a1a2e', acc: '#00ffff' }, indigo: { main: '#0a0a20', key: '#312e81', acc: '#818cf8' }, white: { main: '#f3f4f6', key: '#ffffff', acc: '#111827' }, pink: { main: '#2d0a1a', key: '#4d1635', acc: '#ff007f' } };
+            const s = themes[theme];
+            document.documentElement.style.setProperty('--main-bg', s.main);
+            document.documentElement.style.setProperty('--key-bg', s.key);
+            document.documentElement.style.setProperty('--accent', s.acc);
+            saveSettings();
+        }
+        function toggleModal(id) { document.getElementById(id).classList.toggle('active'); }
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
+    <\/script>
+<\/body>
+<\/html>`;
+}
+
+// ─── DOWNLOAD GENERATED FILE ─────────────────────
+function downloadGeneratedApp() {
+  const html = generateOutputFile();
+  if (!html) { showToast('Please fill in all required fields first', '⚠️ MISSING DATA'); return; }
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'index.html';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('index.html downloaded! Upload to your server.', '✅ FILE READY');
+}
+
+// ─── INIT ────────────────────────────────────────
+// Initialize on page load
+updateCheckoutSummary();
+updateMobileNav();
+renderThemeAudioOptions();
+renderCarKeyGrid();
+// Set default template desc visible
+document.querySelectorAll('[id^="tplDesc-"]').forEach(el => el.style.display = 'none');
+const defaultDesc = document.getElementById('tplDesc-dealer-pro');
+if (defaultDesc) defaultDesc.style.display = 'block';
+updateStep3Sections();
+</script>
+
+</body>
+</html>
